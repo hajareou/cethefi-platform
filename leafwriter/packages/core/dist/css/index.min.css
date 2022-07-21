@@ -10476,15 +10476,16 @@ body {
   width: 20px;
   height: 20px;
   background: unset !important;
+  color: rgba(0, 0, 0, 0.5) !important;
   border: unset !important;
   border-radius: 4px;
 }
 #leaf-writer-container .entitiesList .actions > span:hover {
   background: rgba(255, 255, 255, 0.4) !important;
+  color: black !important;
 }
 #leaf-writer-container .entitiesList .actions > span > i {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.5);
 }
 #leaf-writer-container .entitiesList .actions > span > i:hover {
   color: black;
@@ -10496,6 +10497,7 @@ body {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  overflow: hidden !important;
   padding: 0px;
   background-color: #fff;
   border: 0px;
@@ -10586,6 +10588,8 @@ body {
   max-height: 160px;
   margin-top: 8px;
   margin-bottom: 4px;
+  margin-left: 0;
+  margin-right: 0;
   padding: 0px;
   gap: 2px;
   color: #000;
@@ -10782,7 +10786,7 @@ body {
   align-items: center;
   gap: 8px;
 }
-#leaf-writer-container .imageViewer .button {
+#leaf-writer-container .imageViewer .lw-button {
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -10790,7 +10794,7 @@ body {
   height: 24px;
   border-radius: 3px;
 }
-#leaf-writer-container .imageViewer .button:hover {
+#leaf-writer-container .imageViewer .lw-button:hover {
   cursor: pointer;
   background-color: rgba(0, 0, 0, 0.1);
   /* border: 1px solid #aaa; */
