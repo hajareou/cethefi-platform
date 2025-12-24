@@ -5,8 +5,32 @@ services:
     build:
       dockerfile: Dockerfile
     environment:
-      - GA_MEASUREMENT_ID
-      - KEYCLOAK_URL
-      - AUTH_API_URL
+      - GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - AUTH_API_URL=${AUTH_API_URL}
     ports:
       - 3000:3000
+
+  postgres:
+    image: docker.io/library/postgres:15
+    volumes:
+      - ./keycloak-data:/var/lib/postgresql/data 
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0
+    command: start-dev
+    environment:
+      - KC_DB=${KC_DB}
+      - KC_DB_URL=${KC_DB_URL}
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres

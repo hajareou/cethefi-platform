@@ -78,13 +78,14 @@ export class Api {
    * @returns A promise that resolves to a boolean.
    */
   async init() {
-    const { origin } = window.location;
+   // const { origin } = window.location;
 
     const sessionAuthenticated = await this.keycloak
       .init({
         onLoad: 'check-sso',
         pkceMethod: 'S256',
-        silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
+        //silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
+        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
       })
       .catch(() => log.error('Failed to contact keycloak'));
 
