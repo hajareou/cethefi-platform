@@ -60,5 +60,11 @@
     "webpack": "^5.99.9",
     "webpack-cli": "^6.0.1"
   },
-  "packageManager": "npm@11.4.2"
+  "packageManager": "npm@11.4.2",
+  "dependencies": {
+    "@ts-rest/core": "^3.52.1",
+    "axios": "^1.13.2",
+    "js-cookie": "^3.0.5",
+    "keycloak-js": "^26.2.2"
+  }
 }
