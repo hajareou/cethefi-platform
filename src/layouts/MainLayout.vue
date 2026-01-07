@@ -1,21 +1,60 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+  <q-layout view="lHh Lpr lFf" class="bg-grey-2">
+    <q-header class="bg-white text-grey-8 shadow-1" height-hint="64">
+      <q-toolbar class="q-px-lg">
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          @click="toggleLeftDrawer"
+          class="lt-md"
+        />
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
+        <q-space />
+        <q-space />
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div class="row items-center no-wrap cursor-pointer">
+          <q-avatar color="primary" text-color="white" size="md" font-size="14px">
+            {{ user.initials }}
+          </q-avatar>
+
+          <div class="q-ml-md text-right gt-xs">
+            <div class="text-weight-bold text-caption text-grey-9">
+              {{ user.name }}
+            </div>
+            <div class="text-caption text-grey-6">
+              {{ user.role }}
+            </div>
+          </div>
+        </div>
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-white" :width="260">
+      <div class="q-pa-md">
+        <div class="row items-center q-mb-xl q-mt-sm q-px-sm">
+          <q-avatar color="primary" text-color="white" rounded icon="local_library" />
+          <span class="q-ml-md text-h6 text-primary text-weight-bold">CETHEFI</span>
+        </div>
 
-        <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" />
-      </q-list>
+        <q-list padding class="text-grey-8">
+          <q-item clickable v-ripple active-class="bg-primary text-white" to="/admin" exact>
+            <q-item-section avatar>
+              <q-icon name="dashboard" />
+            </q-item-section>
+            <q-item-section class="text-weight-medium">Dashboard</q-item-section>
+          </q-item>
+
+          <q-item clickable v-ripple to="/admin/users">
+            <q-item-section avatar>
+              <q-icon name="group" />
+            </q-item-section>
+            <q-item-section class="text-weight-medium">User Management</q-item-section>
+          </q-item>
+        </q-list>
+      </div>
     </q-drawer>
 
     <q-page-container>
@@ -24,72 +63,18 @@
   </q-layout>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+<script setup>
+import { ref } from 'vue'
 
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev',
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev',
-  },
-]
+const leftDrawerOpen = ref(false)
 
-export default defineComponent({
-  name: 'MainLayout',
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value
+}
 
-  components: {
-    EssentialLink,
-  },
-
-  setup() {
-    const leftDrawerOpen = ref(false)
-
-    return {
-      linksList,
-      leftDrawerOpen,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value
-      },
-    }
-  },
+const user = ref({
+  name: 'Hajare Ou',
+  role: 'Admin',
+  initials: 'HO',
 })
 </script>
