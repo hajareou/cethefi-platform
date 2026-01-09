@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="bg-grey-2">
-    <q-header class="bg-white text-grey-8 shadow-1" height-hint="64">
-      <q-toolbar class="q-px-lg">
+    <q-header class="bg-white text-grey-8 shadow-1">
+      <q-toolbar class="q-py-sm q-px-md">
         <q-btn
           flat
           dense
@@ -9,22 +9,21 @@
           icon="menu"
           aria-label="Menu"
           @click="toggleLeftDrawer"
-          class="lt-md"
+          class="lt-md q-mr-sm"
         />
 
         <q-space />
-        <q-space />
 
-        <div class="row items-center no-wrap cursor-pointer">
-          <q-avatar color="primary" text-color="white" size="md" font-size="14px">
+        <div class="row items-center no-wrap cursor-pointer q-ml-md">
+          <q-avatar color="indigo-9" text-color="white" size="40px" font-size="16px">
             {{ user.initials }}
           </q-avatar>
 
-          <div class="q-ml-md text-right gt-xs">
-            <div class="text-weight-bold text-caption text-grey-9">
+          <div class="q-ml-sm text-right gt-xs line-height-tight">
+            <div class="text-weight-bold text-body2 text-grey-9">
               {{ user.name }}
             </div>
-            <div class="text-caption text-grey-6">
+            <div class="text-caption text-grey-5" style="line-height: 12px">
               {{ user.role }}
             </div>
           </div>
@@ -32,28 +31,51 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="bg-white" :width="260">
-      <div class="q-pa-md">
-        <div class="row items-center q-mb-xl q-mt-sm q-px-sm">
-          <q-avatar color="primary" text-color="white" rounded icon="local_library" />
-          <span class="q-ml-md text-h6 text-primary text-weight-bold">CETHEFI</span>
+    <q-drawer v-model="leftDrawerOpen" show-if-above class="bg-white" :width="260">
+      <div class="column full-height">
+        <div class="q-pa-lg q-mb-md">
+          <div class="row justify-center">
+            <img
+              src="~assets/cethefi-logo.png"
+              alt="Logo CETHEFI"
+              style="width: 180px; height: auto"
+            />
+          </div>
         </div>
 
-        <q-list padding class="text-grey-8">
-          <q-item clickable v-ripple active-class="bg-primary text-white" to="/admin" exact>
+        <q-list padding class="text-grey-7 q-px-md">
+          <q-item
+            clickable
+            v-ripple
+            to="/admin"
+            active-class="bg-white text-indigo-9"
+            class="q-mb-sm rounded-borders"
+          >
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
-            <q-item-section class="text-weight-medium">Dashboard</q-item-section>
+            <q-item-section class="text-weight-medium text-size-16"> Dashboard </q-item-section>
           </q-item>
 
-          <q-item clickable v-ripple to="/admin/users">
+          <q-item
+            clickable
+            v-ripple
+            to="/admin/users"
+            active-class="bg-indigo-9 text-white shadow-3"
+            class="q-mb-sm rounded-borders"
+          >
             <q-item-section avatar>
               <q-icon name="group" />
             </q-item-section>
-            <q-item-section class="text-weight-medium">User Management</q-item-section>
+            <q-item-section class="text-weight-medium text-size-16">
+              User Management
+            </q-item-section>
           </q-item>
         </q-list>
+
+        <q-space />
+
+        <div class="q-pa-md text-center text-grey-4 text-caption">v1.0.0</div>
       </div>
     </q-drawer>
 
@@ -73,8 +95,24 @@ function toggleLeftDrawer() {
 }
 
 const user = ref({
-  name: 'Hajare Ou',
+  name: 'Françoise Rubellin',
   role: 'Admin',
-  initials: 'HO',
+  initials: 'FR',
 })
 </script>
+
+<style scoped>
+.tracking-wide {
+  letter-spacing: 0.5px;
+}
+.line-height-tight {
+  line-height: 1.2;
+}
+.text-size-16 {
+  font-size: 16px;
+}
+
+:deep(.q-field--rounded .q-field__control) {
+  border-radius: 8px;
+}
+</style>

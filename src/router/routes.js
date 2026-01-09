@@ -3,8 +3,9 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/AdminDashboard.vue') },
+      { path: '', redirect: '/admin' },
       { path: 'admin', component: () => import('pages/AdminDashboard.vue') },
+      { path: 'admin/users', component: () => import('pages/UserManagement.vue') },
     ],
   },
 
