@@ -66,9 +66,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { loadJson } from 'src/services/dataLoader'
+//import { loadJson } from 'src/services/dataLoader'
+import { loadUsers, saveUsers } from 'src/services/storage'
 
 const $q = useQuasar()
 
@@ -87,13 +88,19 @@ const loading = ref(false)
 onMounted(async () => {
   loading.value = true
   try {
-    users.value = await loadJson('/data/users.json')
+    users.value = await loadUsers('/data/users.json')
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
   } finally {
     loading.value = false
   }
 })
+
+watch(
+  users,
+  (val) => saveUsers(val),
+  { deep: true }
+)
 
 // Fonction simple pour supprimer (simulation)
 const deleteUser = (row) => {
