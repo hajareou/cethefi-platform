@@ -14,7 +14,7 @@
             />
             <div class="q-ml-md">
               <div class="text-caption text-grey-7 text-weight-medium">Total Plays</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">127</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ totalPlays }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -33,7 +33,7 @@
             />
             <div class="q-ml-md">
               <div class="text-caption text-grey-7 text-weight-medium">Pending Approval</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">18</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ pendingApproval }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -52,7 +52,7 @@
             />
             <div class="q-ml-md">
               <div class="text-caption text-grey-7 text-weight-medium">Published</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">84</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ publishedCount }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -153,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const filter = ref('')
 const loading = ref(false)
@@ -226,6 +226,16 @@ const rows = ref([
     status: 'Validated',
   },
 ])
+
+const totalPlays = computed(() => rows.value.length)
+
+const pendingApproval = computed(() =>
+  rows.value.filter(r => r.status === 'Under Review').length
+)
+
+const publishedCount = computed(() =>
+  rows.value.filter(r => r.status === 'Published').length
+)
 
 const getStatusColor = (status) => {
   if (status === 'Published') return { bg: 'green-1', text: 'green-8' }
