@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Françoise Rubellin",
+    "email": "francoise.rubellin@univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Olivier Aubert",
+    "email": "olivier.aubert@univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Hajare Oulbaz",
+    "email": "hajare.oulbaz@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Jing Xuan",
+    "email": "xuan.jing@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Tetiana Polonina",
+    "email": "tetiana.polonina@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Alice Leroi",
+    "email": "alice.leroi@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  }
+]

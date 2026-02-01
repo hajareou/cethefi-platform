@@ -66,8 +66,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { loadJson } from 'src/services/dataLoader'
 
 const $q = useQuasar()
 
@@ -80,50 +81,19 @@ const columns = [
   { name: 'action', align: 'center', label: '', field: 'action' },
 ]
 
-const users = ref([
-  {
-    name: 'Françoise Rubellin',
-    email: 'francoise.rubellin@univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Olivier Aubert',
-    email: 'olivier.aubert@univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Hajare Oulbaz',
-    email: 'hajare.oulbaz@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Jing Xuan',
-    email: 'xuan.jing@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Tetiana Polonina',
-    email: 'tetiana.polonina@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Alice Leroi',
-    email: 'alice.leroi@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-])
+const users = ref([])
+const loading = ref(false)
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    users.value = await loadJson('/data/users.json')
+  } catch (e) {
+    $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
+  } finally {
+    loading.value = false
+  }
+})
 
 // Fonction simple pour supprimer (simulation)
 const deleteUser = (row) => {
