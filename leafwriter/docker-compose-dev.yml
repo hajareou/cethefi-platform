@@ -8,20 +8,25 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
+      # On commente le port 8080 de Traefik pour éviter les conflits
+      # - 8080:8080 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../docker/volumes/traefik/:/etc/traefik/
-      - ../docker/volumes/certs:/certs # optional: using self-signed certificates
+      - ../docker/volumes/certs:/certs
       - ../docker/volumes/traefik/log/:/var/log/traefik
     restart: unless-stopped
 
   leafwriter:
     container_name: leafwriter-commons-dev
     build:
+      context: .
       dockerfile: Dockerfile
+    ports:
+      - 3000:3000
     env_file:
       - .env
-    # volumes:
-    #   - ./:/app/
+    environment:
+      - KEYCLOAK_URL=http://localhost:8090/auth
+      - AUTH_API_URL=http://localhost:3001
     restart: unless-stopped

@@ -12,8 +12,7 @@ export const onInitializeOvermind = async ({ actions, effects }: Context, overmi
   await effects.auth.api.setup();
 
   //Get LINCS Providers
-  //const providers = await effects.auth.api.getProviders();
-  const providers: any[] = [];
+  const providers = await effects.auth.api.getProviders();
 
   //populate supported providers
   if (!(providers instanceof Error) && providers.length > 0) actions.providers.setup(providers);
