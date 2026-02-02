@@ -19,18 +19,39 @@
           />
         </div>
 
+        <div class="row items-center q-col-gutter-sm q-mb-md">
+        <div class="col-12 col-md-6">
+          <q-input
+            outlined
+            dense
+            debounce="300"
+            v-model="filter"
+            placeholder="Search name or email..."
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+      </div>
+
         <q-table
           :rows="users"
           :columns="columns"
           row-key="email"
           flat
+          :filter="filter"
           class="text-grey-9"
-          :pagination="{ rowsPerPage: 10 }"
-          hide-pagination
+          :loading="loading"
+          :rows-per-page-options="[5, 10, 20, 50]"
+          v-model:pagination="pagination"
         >
           <template v-slot:body-cell-canEdit="props">
             <q-td :props="props" class="text-center">
-              <q-checkbox dense v-model="props.row.canEdit" color="indigo-9" />
+              <q-checkbox 
+              dense 
+              v-model="props.row.canEdit" 
+              color="indigo-9" />
             </q-td>
           </template>
 
@@ -73,13 +94,50 @@ import { loadUsers, saveUsers } from 'src/services/storage'
 
 const $q = useQuasar()
 
+const filter = ref('')
+
+const pagination = ref({
+  page: 1,
+  rowsPerPage: 5, // default value you want
+  sortBy: 'name',
+  descending: false,
+})
+
 const columns = [
-  { name: 'name', align: 'left', label: 'User', field: 'name', sortable: true },
-  { name: 'email', align: 'left', label: 'Email', field: 'email', sortable: true },
-  { name: 'canEdit', align: 'center', label: 'Can Edit', field: 'canEdit' },
-  { name: 'canValidate', align: 'center', label: 'Can Validate', field: 'canValidate' },
-  { name: 'canPublish', align: 'center', label: 'Can Publish', field: 'canPublish' },
-  { name: 'action', align: 'center', label: '', field: 'action' },
+  { name: 'name', 
+    align: 'left', 
+    label: 'User', 
+    field: 'name', 
+    sortable: true, 
+    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+  },
+  { name: 'email', 
+    align: 'left', 
+    label: 'Email', 
+    field: 'email', 
+    sortable: true, 
+    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+  },
+  { name: 'canEdit', 
+    align: 'center', 
+    label: 'Can Edit', 
+    field: 'canEdit', 
+  },
+  { name: 'canValidate', 
+    align: 'center', 
+    label: 'Can Validate', 
+    field: 'canValidate', 
+  },
+  { name: 'canPublish', 
+    align: 'center', 
+    label: 'Can Publish', 
+    field: 'canPublish', 
+  },
+  { name: 'action', 
+    align: 'center', 
+    label: '', 
+    field: 'action', 
+  },
 ]
 
 const users = ref([])
