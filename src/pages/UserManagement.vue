@@ -16,6 +16,7 @@
             label="Add User"
             color="indigo-9"
             class="q-px-md"
+            @click="showAddDialog = true"
           />
         </div>
 
@@ -84,6 +85,47 @@
       </q-card-section>
     </q-card>
   </q-page>
+  <q-dialog v-model="showAddDialog" persistent>
+  <q-card style="min-width: 400px">
+    <q-card-section>
+      <div class="text-h6">Add User</div>
+    </q-card-section>
+
+    <q-card-section class="q-gutter-md">
+      <q-input
+        v-model="newUser.name"
+        label="Name"
+        outlined
+        dense
+      />
+
+      <q-input
+        v-model="newUser.email"
+        label="Email"
+        type="email"
+        outlined
+        dense
+      />
+
+      <div class="row q-col-gutter-sm">
+        <div class="col">
+          <q-checkbox v-model="newUser.canEdit" label="Can edit" />
+        </div>
+        <div class="col">
+          <q-checkbox v-model="newUser.canValidate" label="Can validate" />
+        </div>
+        <div class="col">
+          <q-checkbox v-model="newUser.canPublish" label="Can publish" />
+        </div>
+      </div>
+    </q-card-section>
+
+    <q-card-actions align="right">
+      <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+      <q-btn unelevated label="Add" color="indigo-9" @click="addUser" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
 <script setup>
@@ -178,6 +220,53 @@ const deleteUser = (row) => {
   }).onOk(() => {
     users.value = users.value.filter((u) => u.email !== row.email)
     $q.notify({ color: 'positive', message: 'User removed' })
+  })
+}
+
+const showAddDialog = ref(false)
+
+const newUser = ref({
+  name: '',
+  email: '',
+  canEdit: false,
+  canValidate: false,
+  canPublish: false,
+})
+
+const addUser = () => {
+  if (!newUser.value.name || !newUser.value.email) {
+    $q.notify({
+      color: 'negative',
+      message: 'Name and email are required',
+    })
+    return
+  }
+
+  // prevent duplicate emails
+  if (users.value.some(u => u.email === newUser.value.email)) {
+    $q.notify({
+      color: 'negative',
+      message: 'A user with this email already exists',
+    })
+    return
+  }
+
+  users.value.push({ ...newUser.value })
+
+  // reset form
+  newUser.value = {
+    name: '',
+    email: '',
+    canEdit: false,
+    canValidate: false,
+    canPublish: false,
+  }
+
+  showAddDialog.value = false
+
+  $q.notify({
+    color: 'positive',
+    message: 'User added',
   })
 }
 </script>
