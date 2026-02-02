@@ -96,12 +96,20 @@ const $q = useQuasar()
 
 const filter = ref('')
 
-const pagination = ref({
-  page: 1,
-  rowsPerPage: 5, // default value you want
-  sortBy: 'name',
-  descending: false,
-})
+const paginationKey = 'usersTablePagination'
+const pagination = ref(
+  JSON.parse(localStorage.getItem(paginationKey) || 'null') || {
+    page: 1,
+    rowsPerPage: 5, // default value
+    sortBy: 'name',
+    descending: false,
+  })
+
+watch(
+  pagination,
+  (val) => localStorage.setItem(paginationKey, JSON.stringify(val)),
+  { deep: true }
+)
 
 const columns = [
   { name: 'name', 
