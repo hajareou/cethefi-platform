@@ -77,7 +77,7 @@
                 color="grey-8"
                 icon="delete_outline"
                 size="sm"
-                @click="deleteUser(props.row)"
+                @click="() => { console.log('delete clicked', props.row); confirmDelete(props.row) }"
               />
             </q-td>
           </template>
@@ -127,6 +127,10 @@
   </q-card>
 </q-dialog>
 </template>
+
+framework: {
+  plugins: ['Notify', 'Dialog']
+}
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
@@ -211,15 +215,23 @@ watch(
 )
 
 // Fonction simple pour supprimer (simulation)
-const deleteUser = (row) => {
+const confirmDelete = (user) => {
   $q.dialog({
     title: 'Confirm',
-    message: `Would you like to remove ${row.name}?`,
+    message: `Would you like to remove ${user.name}?`,
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    users.value = users.value.filter((u) => u.email !== row.email)
-    $q.notify({ color: 'positive', message: 'User removed' })
+    deleteUser(user)  
+  })
+}
+
+const deleteUser = (user) => {
+  users.value = users.value.filter(u => u.email !== user.email)
+
+  $q.notify({
+    color: 'positive',
+    message: 'User removed',
   })
 }
 
