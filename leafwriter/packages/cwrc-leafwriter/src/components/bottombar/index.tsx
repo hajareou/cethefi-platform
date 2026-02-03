@@ -7,6 +7,9 @@ import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
 import { Schema } from './schema';
 
+// import new component -- save and pull
+import QuickSaveAndPull from './quickSaveAndPull';
+
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
@@ -33,11 +36,18 @@ export const BottomBar = () => {
           <>
             <EditorMode />
             <AnnotationMode />
+            {/* <QuickSaveAndPull /> */}
             <Schema />
           </>
         )}
 
         {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
+
+        {/* --- 改动 2: 放置新组件 --- */}
+        {/* 逻辑：只在非只读模式下显示，放在黄色感叹号后面，Spacer(Box flexGrow=1) 前面 */}
+        {!isReadonly && <QuickSaveAndPull />}
+
+        {/* 这个 Box 会自动撑开中间的空间，把上面的组件推到左边，下面的 Links 推到右边 */}
 
         <Box flexGrow={1} />
 
