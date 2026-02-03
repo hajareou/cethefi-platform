@@ -1,0 +1,184 @@
+[
+  {
+    "name": "Françoise Rubellin",
+    "email": "francoise.rubellin@univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Olivier Aubert",
+    "email": "olivier.aubert@univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Hajare Oulbaz",
+    "email": "hajare.oulbaz@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Jing Xuan",
+    "email": "xuan.jing@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Tetiana Polonina",
+    "email": "tetiana.polonina@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Alice Leroi",
+    "email": "alice.leroi@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Paul Martin",
+    "email": "paul.martin@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Camille Durand",
+    "email": "camille.durand@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": true,
+    "canPublish": false
+  },
+  {
+    "name": "Lucas Bernard",
+    "email": "lucas.bernard@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": true,
+    "canPublish": false
+  },
+  {
+    "name": "Emma Petit",
+    "email": "emma.petit@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Thomas Moreau",
+    "email": "thomas.moreau@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": true
+  },
+  {
+    "name": "Julie Lefevre",
+    "email": "julie.lefevre@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": true
+  },
+  {
+    "name": "Antoine Girard",
+    "email": "antoine.girard@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": true,
+    "canPublish": true
+  },
+  {
+    "name": "Manon Rousseau",
+    "email": "manon.rousseau@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": true,
+    "canPublish": true
+  },
+  {
+    "name": "Nicolas Fontaine",
+    "email": "nicolas.fontaine@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Laura Blanchard",
+    "email": "laura.blanchard@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Julien Chevalier",
+    "email": "julien.chevalier@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": true,
+    "canPublish": false
+  },
+  {
+    "name": "Clara Perrin",
+    "email": "clara.perrin@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": true,
+    "canPublish": false
+  },
+  {
+    "name": "Maxime Renard",
+    "email": "maxime.renard@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": true
+  },
+  {
+    "name": "Sarah Marchand",
+    "email": "sarah.marchand@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": true
+  },
+  {
+    "name": "Hugo Dubois",
+    "email": "hugo.dubois@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": true,
+    "canPublish": true
+  },
+  {
+    "name": "Lucie Garnier",
+    "email": "lucie.garnier@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": true,
+    "canPublish": true
+  },
+  {
+    "name": "Baptiste Colin",
+    "email": "baptiste.colin@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Elise Robin",
+    "email": "elise.robin@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": false,
+    "canPublish": false
+  },
+  {
+    "name": "Victor Lopez",
+    "email": "victor.lopez@etu.univ-nantes.fr",
+    "canEdit": false,
+    "canValidate": true,
+    "canPublish": false
+  },
+  {
+    "name": "Noémie Faure",
+    "email": "noemie.faure@etu.univ-nantes.fr",
+    "canEdit": true,
+    "canValidate": true,
+    "canPublish": false
+  }
+]

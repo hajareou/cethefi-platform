@@ -16,21 +16,43 @@
             label="Add User"
             color="indigo-9"
             class="q-px-md"
+            @click="showAddDialog = true"
           />
         </div>
+
+        <div class="row items-center q-col-gutter-sm q-mb-md">
+        <div class="col-12 col-md-6">
+          <q-input
+            outlined
+            dense
+            debounce="300"
+            v-model="filter"
+            placeholder="Search name or email..."
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+      </div>
 
         <q-table
           :rows="users"
           :columns="columns"
           row-key="email"
           flat
+          :filter="filter"
           class="text-grey-9"
-          :pagination="{ rowsPerPage: 10 }"
-          hide-pagination
+          :loading="loading"
+          :rows-per-page-options="[5, 10, 20, 50]"
+          v-model:pagination="pagination"
         >
           <template v-slot:body-cell-canEdit="props">
             <q-td :props="props" class="text-center">
-              <q-checkbox dense v-model="props.row.canEdit" color="indigo-9" />
+              <q-checkbox 
+              dense 
+              v-model="props.row.canEdit" 
+              color="indigo-9" />
             </q-td>
           </template>
 
@@ -55,7 +77,7 @@
                 color="grey-8"
                 icon="delete_outline"
                 size="sm"
-                @click="deleteUser(props.row)"
+                @click="() => { console.log('delete clicked', props.row); confirmDelete(props.row) }"
               />
             </q-td>
           </template>
@@ -63,78 +85,200 @@
       </q-card-section>
     </q-card>
   </q-page>
+  <q-dialog v-model="showAddDialog" persistent>
+  <q-card style="min-width: 400px">
+    <q-card-section>
+      <div class="text-h6">Add User</div>
+    </q-card-section>
+
+    <q-card-section class="q-gutter-md">
+      <q-input
+        v-model="newUser.name"
+        label="Name"
+        outlined
+        dense
+      />
+
+      <q-input
+        v-model="newUser.email"
+        label="Email"
+        type="email"
+        outlined
+        dense
+      />
+
+      <div class="row q-col-gutter-sm">
+        <div class="col">
+          <q-checkbox v-model="newUser.canEdit" label="Can edit" />
+        </div>
+        <div class="col">
+          <q-checkbox v-model="newUser.canValidate" label="Can validate" />
+        </div>
+        <div class="col">
+          <q-checkbox v-model="newUser.canPublish" label="Can publish" />
+        </div>
+      </div>
+    </q-card-section>
+
+    <q-card-actions align="right">
+      <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+      <q-btn unelevated label="Add" color="indigo-9" @click="addUser" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
+framework: {
+  plugins: ['Notify', 'Dialog']
+}
+
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+//import { loadJson } from 'src/services/dataLoader'
+import { loadUsers, saveUsers } from 'src/services/storage'
 
 const $q = useQuasar()
 
+const filter = ref('')
+
+const paginationKey = 'usersTablePagination'
+const pagination = ref(
+  JSON.parse(localStorage.getItem(paginationKey) || 'null') || {
+    page: 1,
+    rowsPerPage: 5, // default value
+    sortBy: 'name',
+    descending: false,
+  })
+
+watch(
+  pagination,
+  (val) => localStorage.setItem(paginationKey, JSON.stringify(val)),
+  { deep: true }
+)
+
 const columns = [
-  { name: 'name', align: 'left', label: 'User', field: 'name', sortable: true },
-  { name: 'email', align: 'left', label: 'Email', field: 'email', sortable: true },
-  { name: 'canEdit', align: 'center', label: 'Can Edit', field: 'canEdit' },
-  { name: 'canValidate', align: 'center', label: 'Can Validate', field: 'canValidate' },
-  { name: 'canPublish', align: 'center', label: 'Can Publish', field: 'canPublish' },
-  { name: 'action', align: 'center', label: '', field: 'action' },
+  { name: 'name', 
+    align: 'left', 
+    label: 'User', 
+    field: 'name', 
+    sortable: true, 
+    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+  },
+  { name: 'email', 
+    align: 'left', 
+    label: 'Email', 
+    field: 'email', 
+    sortable: true, 
+    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+  },
+  { name: 'canEdit', 
+    align: 'center', 
+    label: 'Can Edit', 
+    field: 'canEdit', 
+  },
+  { name: 'canValidate', 
+    align: 'center', 
+    label: 'Can Validate', 
+    field: 'canValidate', 
+  },
+  { name: 'canPublish', 
+    align: 'center', 
+    label: 'Can Publish', 
+    field: 'canPublish', 
+  },
+  { name: 'action', 
+    align: 'center', 
+    label: '', 
+    field: 'action', 
+  },
 ]
 
-const users = ref([
-  {
-    name: 'Françoise Rubellin',
-    email: 'francoise.rubellin@univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Olivier Aubert',
-    email: 'olivier.aubert@univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Hajare Oulbaz',
-    email: 'hajare.oulbaz@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Jing Xuan',
-    email: 'xuan.jing@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Tetiana Polonina',
-    email: 'tetiana.polonina@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-  {
-    name: 'Alice Leroi',
-    email: 'alice.leroi@etu.univ-nantes.fr',
-    canEdit: false,
-    canValidate: false,
-    canPublish: false,
-  },
-])
+const users = ref([])
+const loading = ref(false)
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    users.value = await loadUsers('/data/users.json')
+  } catch (e) {
+    $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
+  } finally {
+    loading.value = false
+  }
+})
+
+watch(
+  users,
+  (val) => saveUsers(val),
+  { deep: true }
+)
 
 // Fonction simple pour supprimer (simulation)
-const deleteUser = (row) => {
+const confirmDelete = (user) => {
   $q.dialog({
     title: 'Confirm',
-    message: `Would you like to remove ${row.name}?`,
+    message: `Would you like to remove ${user.name}?`,
     cancel: true,
     persistent: true,
   }).onOk(() => {
-    users.value = users.value.filter((u) => u.email !== row.email)
-    $q.notify({ color: 'positive', message: 'User removed' })
+    deleteUser(user)  
+  })
+}
+
+const deleteUser = (user) => {
+  users.value = users.value.filter(u => u.email !== user.email)
+
+  $q.notify({
+    color: 'positive',
+    message: 'User removed',
+  })
+}
+
+const showAddDialog = ref(false)
+
+const newUser = ref({
+  name: '',
+  email: '',
+  canEdit: false,
+  canValidate: false,
+  canPublish: false,
+})
+
+const addUser = () => {
+  if (!newUser.value.name || !newUser.value.email) {
+    $q.notify({
+      color: 'negative',
+      message: 'Name and email are required',
+    })
+    return
+  }
+
+  // prevent duplicate emails
+  if (users.value.some(u => u.email === newUser.value.email)) {
+    $q.notify({
+      color: 'negative',
+      message: 'A user with this email already exists',
+    })
+    return
+  }
+
+  users.value.push({ ...newUser.value })
+
+  // reset form
+  newUser.value = {
+    name: '',
+    email: '',
+    canEdit: false,
+    canValidate: false,
+    canPublish: false,
+  }
+
+  showAddDialog.value = false
+
+  $q.notify({
+    color: 'positive',
+    message: 'User added',
   })
 }
 </script>
