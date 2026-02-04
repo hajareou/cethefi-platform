@@ -1,51 +1,38 @@
 // src/components/bottombar/quickSaveAndPull/ActionButtons.tsx
 
 import { Box, Button } from '@mui/material';
-import { useTranslation } from 'react-i18next'; // 假设你需要国际化
-import { useActions, useAppState } from '../../../overmind';
-import useEditorReaction from '../hooks/useEditorReaction';
+import { useTranslation } from 'react-i18next';
 
-// 定义接口：父组件需要传给我什么？需要传两个点击事件函数。
+// Define Interface: What does the parent component need to pass?
 interface ActionButtonsProps {
   onSave: () => void;
-  onPull: () => void;
 }
 
-// 提取静态样式：Morandi 风格 (深蓝灰)，符合你的审美
+// Static Styles: Morandi style (Deep Blue Grey)
 const buttonStyle = {
   backgroundColor: '#546e7a', // Blue Grey 600
   color: '#fff',
   textTransform: 'none',
   boxShadow: 1,
-  minWidth: '80px', // 给个最小宽度好看一点
+  minWidth: '80px', // Minimum width for better aesthetics
   '&:hover': {
     backgroundColor: '#455a64', // Blue Grey 700
   },
 };
 
-export const ActionButtons = ({ onSave, onPull }: ActionButtonsProps) => {
+export const ActionButtons = ({ onSave }: ActionButtonsProps) => {
   const { t } = useTranslation();
 
   return (
-    <Box sx={{ display: 'flex', gap: 2 }}> {/* gap: 2 确保两个按钮之间有空隙 */}
+    <Box sx={{ display: 'flex', gap: 2 }}>
       <Button
         variant="contained"
         size="small"
         onClick={onSave}
         sx={buttonStyle}
       >
-        {/* 这里可以用 t('Save') */}
-        Save
-      </Button>
-
-      <Button
-        variant="contained"
-        size="small"
-        onClick={onPull}
-        sx={buttonStyle}
-      >
-        {/* 这里可以用 t('Pull') */}
-        Pull
+        {/* You can use t('Save') for internationalization */}
+        {t('Save')}
       </Button>
     </Box>
   );
