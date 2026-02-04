@@ -8,7 +8,7 @@ import EditorMode from './editorMode';
 import { Schema } from './schema';
 
 // import new component -- save and pull
-import QuickSaveAndPull from './quickSaveAndPull';
+import QuickSave from './quickSave';
 
 export const BottomBar = () => {
   const { isReadonly } = useAppState().editor;
@@ -36,7 +36,7 @@ export const BottomBar = () => {
           <>
             <EditorMode />
             <AnnotationMode />
-            {/* <QuickSaveAndPull /> */}
+            {/* <QuickSave /> */}
             <Schema />
           </>
         )}
@@ -45,7 +45,7 @@ export const BottomBar = () => {
 
         {/* --- 改动 2: 放置新组件 --- */}
         {/* 逻辑：只在非只读模式下显示，放在黄色感叹号后面，Spacer(Box flexGrow=1) 前面 */}
-        {!isReadonly && <QuickSaveAndPull />}
+        {!isReadonly && <QuickSave />}
 
         {/* 这个 Box 会自动撑开中间的空间，把上面的组件推到左边，下面的 Links 推到右边 */}
 

@@ -3,9 +3,9 @@
 import { Box } from '@mui/material';
 import { ActionButtons } from './ActionButtons';
 
-const QuickSaveAndPull = () => {
+const QuickSave = () => {
   // 1. Logic layer: 
-  // Future implementation: const { saveDocument } = useQuickSaveAndPull(); 
+  // Future implementation: const { saveDocument } = useQuickSave(); 
 
   const handleSave = () => {
     console.log('Save Clicked');
@@ -29,4 +29,4 @@ const QuickSaveAndPull = () => {
   );
 };
 
-export default QuickSaveAndPull;
+export default QuickSave;
