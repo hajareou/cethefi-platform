@@ -123,6 +123,11 @@ export const useLeafWriter = () => {
     });
     // leafWriterEvents.push(onStateChangeEvent);
     setLeafWriterEvents((prev) => [...prev, onStateChangeEvent]);
+
+    const onSaveAsEvent = leafWriter.onSaveAs.subscribe(() => {
+      handleSave('saveAs');
+    });
+    setLeafWriterEvents((prev) => [...prev, onSaveAsEvent]);
   };
 
   const removeSubscribers = () => {
