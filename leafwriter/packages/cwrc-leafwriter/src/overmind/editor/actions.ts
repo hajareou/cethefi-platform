@@ -248,6 +248,10 @@ export const closeEditor = ({ state }: Context) => {
   state.editor.latestEvent = 'close';
 };
 
+export const triggerSaveAs = ({ state }: Context) => {
+  state.editor.latestEvent = 'saveAs';
+};
+
 export const restoreStandOff = ({ state }: Context, content: string) => {
   const xml = new DOMParser().parseFromString(content, 'application/xml');
 

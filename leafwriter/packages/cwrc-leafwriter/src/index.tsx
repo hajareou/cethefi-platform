@@ -48,6 +48,7 @@ export class Leafwriter {
   onContentHasChanged: Subject<boolean>;
   private _onLoad: Subject<{ schemaName: string }>;
   private _onClose: Subject<boolean>;
+  private _onSaveAs: Subject<void>;
   private _onEditorStateChange: Subject<EditorStateType>;
 
   private options?: LeafWriterOptions;
@@ -63,6 +64,7 @@ export class Leafwriter {
     this.onContentHasChanged = new Subject();
     this._onLoad = new Subject();
     this._onClose = new Subject();
+    this._onSaveAs = new Subject();
     this._onEditorStateChange = new Subject();
 
     //container height
@@ -92,6 +94,9 @@ export class Leafwriter {
         if (overmind.state.editor.latestEvent === 'close') {
           this._onClose.next(true);
           this._onClose.complete();
+        }
+        if (overmind.state.editor.latestEvent === 'saveAs') {
+          this._onSaveAs.next();
         }
       }
 
@@ -130,6 +135,10 @@ export class Leafwriter {
 
   get onClose() {
     return this._onClose;
+  }
+
+  get onSaveAs() {
+    return this._onSaveAs;
   }
 
   get onEditorStateChange() {
