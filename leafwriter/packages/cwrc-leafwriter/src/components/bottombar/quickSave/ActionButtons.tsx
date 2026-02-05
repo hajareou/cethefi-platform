@@ -32,7 +32,7 @@ export const ActionButtons = ({ onSave }: ActionButtonsProps) => {
         sx={buttonStyle}
       >
         {/* You can use t('Save') for internationalization */}
-        {t('Save')}
+        {t('LW.commons.save_as')}
       </Button>
     </Box>
   );
