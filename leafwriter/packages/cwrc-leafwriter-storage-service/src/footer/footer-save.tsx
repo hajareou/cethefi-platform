@@ -1,4 +1,4 @@
-import { Box, Button, DialogActions, Icon, IconButton, useMediaQuery } from '@mui/material';
+import { Button, DialogActions, Icon, IconButton, TextField, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +12,10 @@ export interface Props {
 
 export const FooterSave = ({ onCancel }: Props) => {
   const { resource } = useAppState().common;
-  const { isSaving, owner, repository } = useAppState().cloud;
+  const { isSaving, owner, repository, commitMessage } = useAppState().cloud;
 
   const { download } = useActions().common;
-  const { checkRepoUserWritenPermission, getProvider, saveAspullRequest, saveDocument } =
+  const { checkRepoUserWritenPermission, getProvider, saveAspullRequest, saveDocument, setCommitMessage } =
     useActions().cloud;
 
   const { t } = useTranslation();
@@ -60,7 +60,13 @@ export const FooterSave = ({ onCancel }: Props) => {
       <Button onClick={onCancel} size="small" title="cancel">
         {t('SS.commons.cancel')}
       </Button>
-      <Box flexGrow={1} />
+      <TextField
+        label={t('SS.cloud.settings.comit_message')}
+        value={commitMessage}
+        onChange={(e) => setCommitMessage(e.target.value)}
+        size="small"
+        sx={{ mx: 2, flex: 1 }}
+      />
       {isSM ? (
         <IconButton disabled={isSaving} onClick={handleDownload} size="small">
           <Icon component={getIcon('download')} />

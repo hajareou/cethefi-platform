@@ -63,7 +63,7 @@
                 "files_on_repositoty": "Files on {{repository}}"
             },
             "settings": {
-                "comit_message": "Comit message",
+                "comit_message": "Commit message",
                 "done": "Done",
                 "save_settings": "Save Settings",
                 "update": "update"
