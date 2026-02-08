@@ -153,7 +153,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { listRepoDir, getLastCommit } from '../services/githubRepo.js'
 
 const filter = ref('')
 const loading = ref(false)
@@ -196,36 +197,56 @@ const columns = [
   },
 ]
 
-const rows = ref([
-  {
-    id: 1,
-    title: 'Le Mariage de Figaro',
-    author: 'Beaumarchais',
-    lastModified: '2025-11-20',
-    status: 'Published',
-  },
-  {
-    id: 2,
-    title: 'Le Barbier de Séville',
-    author: 'Beaumarchais',
-    lastModified: '2025-11-21',
-    status: 'Validated',
-  },
-  {
-    id: 3,
-    title: 'Le Barbier de Séville',
-    author: 'Beaumarchais',
-    lastModified: '2025-11-7',
-    status: 'Under Review',
-  },
-  {
-    id: 4,
-    title: 'La Mère coupable',
-    author: 'Beaumarchais',
-    lastModified: '2025-11-19',
-    status: 'Validated',
-  },
-])
+const rows = ref([])
+
+onMounted(async () => {
+  await fetchGithubData()
+})
+
+const fetchGithubData = async () => {
+  loading.value = true
+  try {
+    const owner = 'hajareou'
+    const repo = 'leafwriter-test'
+    
+    // 1. Lister les fichiers
+    const files = await listRepoDir({ owner, repo, path: '' })
+    
+    // 2. Pour chaque fichier, récupérer le dernier commit
+    const promises = files.map(async (file) => {
+      // On ignore les dossiers si on ne veut que des fichiers, ou on les traite aussi
+      // Ici on suppose que tout ce qui est retourné est un objet intéressant
+      let lastMod = 'Unknown'
+      let author = 'Unknown'
+
+      try {
+        const commitData = await getLastCommit({ owner, repo, path: file.path })
+        if (commitData && commitData.commit) {
+          author = commitData.commit.author.name
+          lastMod = commitData.commit.author.date.split('T')[0] // YYYY-MM-DD
+        }
+      } catch (err) {
+        console.error('Error fetching commit for', file.name, err)
+      }
+
+      return {
+        id: file.sha,
+        title: file.name,
+        author: author,
+        lastModified: lastMod,
+        status: 'Published', // Par défaut
+        type: file.type // au cas où on voudrait filtrer
+      }
+    })
+
+    const results = await Promise.all(promises)
+    rows.value = results
+  } catch (error) {
+    console.error('Error fetching GitHub data:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 const totalPlays = computed(() => rows.value.length)
 
