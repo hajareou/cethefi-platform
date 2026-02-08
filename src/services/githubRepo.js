@@ -11,11 +11,6 @@ const getHeaders = () => {
   return headers
 }
 
-/**
- * Liste le contenu d'un dossier GitHub via "Get repository content".
- * owner/repo: ex "hajareou" / "leafwriter-test"
- * path: '' pour la racine, ou 'dossier/sousdossier'
- */
 export async function listRepoDir({ owner, repo, path = '' }) {
   const url = `${GH_API}/repos/${owner}/${repo}/contents/${path}`
   const res = await fetch(url, {
@@ -26,20 +21,20 @@ export async function listRepoDir({ owner, repo, path = '' }) {
     throw new Error(`GitHub contents failed (HTTP ${res.status})`)
   }
 
-  return res.json() // tableau si path = dossier
+  return res.json()
 }
 
 /**
  * Récupère le dernier commit pour un fichier ou dossier donné.
  */
 export async function getLastCommit({ owner, repo, path }) {
-  const url = `${GH_API}/repos/${owner}/${repo}/commits?path=${path}&per_page=1`
+  const url = `${GH_API}/repos/${owner}/${repo}/commits?path=${encodeURIComponent(path)}&per_page=1`
   const res = await fetch(url, {
     headers: getHeaders(),
   })
 
   if (!res.ok) {
-     // Si 404 ou vide (ca peut arriver sur des dossiers vides), on ignore ou on renvoie null
+    // Si 404 ou vide (ca peut arriver sur des dossiers vides), on ignore ou on renvoie null
     return null
   }
 

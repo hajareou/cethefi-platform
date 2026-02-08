@@ -13,8 +13,8 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Total Plays</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">{{ totalPlays }}</div>
+              <div class="text-caption text-grey-7 text-weight-medium">Total Documents</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ counters.total }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -32,8 +32,8 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Pending Approval</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">{{ pendingApproval }}</div>
+              <div class="text-caption text-grey-7 text-weight-medium">Draft</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ counters.draft }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -52,7 +52,7 @@
             />
             <div class="q-ml-md">
               <div class="text-caption text-grey-7 text-weight-medium">Published</div>
-              <div class="text-h4 text-weight-bolder text-grey-9">{{ publishedCount }}</div>
+              <div class="text-h4 text-weight-bolder text-grey-9">{{ counters.published }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -83,7 +83,14 @@
               </template>
             </q-input>
 
-            <q-btn outline no-caps :icon="githubIcon" label="Import from GitHub" color="grey-8" />
+            <q-btn
+              outline
+              no-caps
+              :icon="githubIcon"
+              label="Import from GitHub"
+              color="grey-8"
+              @click="fetchGithubData"
+            />
             <q-btn unelevated no-caps icon="add" label="New Document" color="primary" />
           </div>
         </div>
@@ -125,7 +132,7 @@
                 class="bg-red-1 q-px-md"
               />
               <q-btn
-                v-else-if="props.row.status === 'Under Review'"
+                v-else-if="props.row.status === 'Draft'"
                 flat
                 dense
                 no-caps
@@ -158,22 +165,36 @@ import { listRepoDir, getLastCommit } from '../services/githubRepo.js'
 
 const filter = ref('')
 const loading = ref(false)
+const rows = ref([])
+
+const owner = 'hajareou'
+const repo = 'leafwriter-test'
+
+// GitHub folders -> Dashboard status
+const STATUS_DIRS = [
+  { status: 'Draft', path: 'data/articles/drafts' },
+  { status: 'Published', path: 'data/articles/published' },
+  { status: 'Reviewed', path: 'data/articles/reviewed' },
+]
+
 const githubIcon =
   'M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'
 
 const columns = [
-  { name: 'title', 
-    align: 'left', 
-    label: 'Document Title', 
-    field: 'title', 
+  {
+    name: 'title',
+    align: 'left',
+    label: 'Document Title',
+    field: 'title',
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
-  { name: 'author', 
-    align: 'left', 
-    label: 'Author', 
-    field: 'author', 
-    sortable: true, 
+  {
+    name: 'author',
+    align: 'left',
+    label: 'Author',
+    field: 'author',
+    sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -182,86 +203,94 @@ const columns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
-    sort: (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    sort: (a, b) => {
+      const ta = Date.parse(a)
+      const tb = Date.parse(b)
+      const va = Number.isFinite(ta) ? ta : -Infinity
+      const vb = Number.isFinite(tb) ? tb : -Infinity
+      return va - vb
+    },
+    format: (val) => val ?? '-',
   },
-  { name: 'status', 
-    align: 'left', 
-    label: 'Status', 
-    field: 'status', 
-    sortable: true 
-  },
-  { name: 'action', 
-    align: 'right', 
-    label: 'Action', 
-    field: 'action' 
-  },
+  { name: 'status', align: 'left', label: 'Status', field: 'status', sortable: true },
+  { name: 'action', align: 'right', label: 'Action', field: 'action' },
 ]
 
-const rows = ref([])
+const counters = computed(() => {
+  let draft = 0
+  let published = 0
 
-onMounted(async () => {
-  await fetchGithubData()
+  for (const r of rows.value) {
+    if (r.status === 'Draft') draft++
+    else if (r.status === 'Published') published++
+  }
+
+  return {
+    total: rows.value.length,
+    draft,
+    published,
+  }
 })
 
-const fetchGithubData = async () => {
+function getStatusColor(status) {
+  if (status === 'Published') return { bg: 'green-1', text: 'green-8' }
+  if (status === 'Reviewed') return { bg: 'blue-1', text: 'blue-8' }
+  if (status === 'Draft') return { bg: 'orange-1', text: 'orange-9' }
+  return { bg: 'grey-2', text: 'grey-8' }
+}
+
+async function fetchGithubData() {
   loading.value = true
   try {
-    const owner = 'hajareou'
-    const repo = 'leafwriter-test'
-    
-    // 1. Lister les fichiers
-    const files = await listRepoDir({ owner, repo, path: '' })
-    
-    // 2. Pour chaque fichier, récupérer le dernier commit
-    const promises = files.map(async (file) => {
-      // On ignore les dossiers si on ne veut que des fichiers, ou on les traite aussi
-      // Ici on suppose que tout ce qui est retourné est un objet intéressant
-      let lastMod = 'Unknown'
-      let author = 'Unknown'
+    const results = await Promise.all(
+      STATUS_DIRS.map(async ({ status, path }) => {
+        const items = await listRepoDir({ owner, repo, path })
+        if (!Array.isArray(items)) return []
 
-      try {
-        const commitData = await getLastCommit({ owner, repo, path: file.path })
-        if (commitData && commitData.commit) {
-          author = commitData.commit.author.name
-          lastMod = commitData.commit.author.date.split('T')[0] // YYYY-MM-DD
-        }
-      } catch (err) {
-        console.error('Error fetching commit for', file.name, err)
-      }
+        return items
+          .filter(
+            (i) =>
+              i?.type === 'file' &&
+              typeof i?.name === 'string' &&
+              i.name.toLowerCase().endsWith('.xml'),
+          )
+          .map((file) => ({
+            id: file.sha,
+            title: file.name,
+            author: '-',
+            lastModified: null,
+            status,
+            _path: file.path,
+          }))
+      }),
+    )
 
-      return {
-        id: file.sha,
-        title: file.name,
-        author: author,
-        lastModified: lastMod,
-        status: 'Published', // Par défaut
-        type: file.type // au cas où on voudrait filtrer
-      }
-    })
+    const flat = results.flat()
 
-    const results = await Promise.all(promises)
-    rows.value = results
-  } catch (error) {
-    console.error('Error fetching GitHub data:', error)
+    flat.sort((a, b) =>
+      (a.status + a.title).localeCompare(b.status + b.title, 'fr', { sensitivity: 'base' }),
+    )
+
+    rows.value = flat
+
+    for (const row of rows.value) {
+      const commitData = await getLastCommit({ owner, repo, path: row._path })
+      const author = commitData?.commit?.author?.name ?? null
+      const dateIso = commitData?.commit?.author?.date ?? null
+      row.author = author ?? '-'
+      row.lastModified = dateIso ? dateIso.split('T')[0] : null
+    }
+
+    rows.value = [...rows.value]
+  } catch (e) {
+    console.error('Error fetching GitHub data:', e)
+    rows.value = []
   } finally {
     loading.value = false
   }
 }
 
-const totalPlays = computed(() => rows.value.length)
-
-const pendingApproval = computed(() =>
-  rows.value.filter(r => r.status === 'Under Review').length
-)
-
-const publishedCount = computed(() =>
-  rows.value.filter(r => r.status === 'Published').length
-)
-
-const getStatusColor = (status) => {
-  if (status === 'Published') return { bg: 'green-1', text: 'green-8' }
-  if (status === 'Validated') return { bg: 'blue-1', text: 'blue-8' } // Validated est bien là
-  if (status === 'Under Review') return { bg: 'orange-1', text: 'orange-9' }
-  return { bg: 'grey-2', text: 'grey-8' }
-}
+onMounted(() => {
+  fetchGithubData()
+})
 </script>
