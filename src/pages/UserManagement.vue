@@ -128,10 +128,6 @@
 </q-dialog>
 </template>
 
-framework: {
-  plugins: ['Notify', 'Dialog']
-}
-
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
@@ -282,12 +278,3 @@ const addUser = () => {
   })
 }
 </script>
-
-<style scoped>
-/* Petite retouche pour que l'entête du tableau soit bien aligné avec le design */
-:deep(.q-table th) {
-  font-weight: bold;
-  font-size: 0.75rem;
-  color: #424242; /* Gris foncé */
-}
-</style>

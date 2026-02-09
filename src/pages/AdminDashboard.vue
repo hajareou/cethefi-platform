@@ -95,11 +95,12 @@
           flat
           :filter="filter"
           :rows-per-page-options="[5, 10, 20, 50]"
-          class="text-grey-8"
+          class="text-grey-9"
           :loading="loading"
+          v-model:pagination="pagination"
         >
           <template v-slot:body-cell-status="props">
-            <q-td :props="props">
+            <q-td :props="props" class="text-center">
               <q-chip
                 dense
                 flat
@@ -177,20 +178,20 @@ const columns = [
   },
   {
     name: 'last_modified',
-    align: 'left',
+    align: 'center',
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
     sort: (a, b) => new Date(a).getTime() - new Date(b).getTime()
   },
   { name: 'status', 
-    align: 'left', 
+    align: 'center', 
     label: 'Status', 
     field: 'status', 
     sortable: true 
   },
   { name: 'action', 
-    align: 'right', 
+    align: 'center', 
     label: 'Action', 
     field: 'action' 
   },
