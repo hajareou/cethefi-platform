@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "title": "Le Mariage de Figaro",
+    "author": "Beaumarchais",
+    "year": 1784,
+    "lastModified": "2025-11-20",
+    "status": "Published"
+  },
+  {
+    "id": 2,
+    "title": "Le Barbier de Séville",
+    "author": "Beaumarchais",
+    "year": 1775,
+    "lastModified": "2025-11-21",
+    "status": "Validated"
+  },
+  {
+    "id": 3,
+    "title": "Le Barbier de Séville (Draft)",
+    "author": "Beaumarchais",
+    "year": 1775,
+    "lastModified": "2025-11-07",
+    "status": "Under Review"
+  },
+  {
+    "id": 4,
+    "title": "La Mère coupable",
+    "author": "Beaumarchais",
+    "year": 1792,
+    "lastModified": "2025-11-19",
+    "status": "Validated"
+  }
+]
