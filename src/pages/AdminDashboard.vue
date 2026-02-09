@@ -114,37 +114,74 @@
           </template>
 
           <template v-slot:body-cell-action="props">
-            <q-td :props="props" class="text-right">
+            <q-td :props="props" class="text-center">
               <q-btn
-                v-if="props.row.status === 'Published'"
                 flat
+                round
                 dense
-                no-caps
-                size="sm"
-                label="Unpublish"
-                color="negative"
-                class="bg-red-1 q-px-md"
-              />
-              <q-btn
-                v-else-if="props.row.status === 'Under Review'"
-                flat
-                dense
-                no-caps
-                size="sm"
-                label="Edit"
-                color="warning"
-                class="bg-amber-1 q-px-md"
-              />
-              <q-btn
-                v-else
-                flat
-                dense
-                no-caps
-                size="sm"
-                label="Publish"
-                color="positive"
-                class="bg-green-1 q-px-md"
-              />
+                icon="more_vert"
+                color="grey-8"
+              >
+                <q-menu>
+                  <q-list style="min-width: 150px">
+
+                    <!-- Edit: only for Under Review -->
+                    <q-item
+                      v-if="props.row.status === 'Under Review'"
+                      clickable
+                      v-close-popup
+                      @click="editDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>Edit</q-item-section>
+                    </q-item>
+
+                    <!-- Publish: only if not published -->
+                    <q-item
+                      v-if="props.row.status !== 'Published'"
+                      clickable
+                      v-close-popup
+                      @click="publishDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="publish" />
+                      </q-item-section>
+                      <q-item-section>Publish</q-item-section>
+                    </q-item>
+
+                    <!-- Unpublish: only if published -->
+                    <q-item
+                      v-if="props.row.status === 'Published'"
+                      clickable
+                      v-close-popup
+                      @click="unpublishDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="visibility_off" />
+                      </q-item-section>
+                      <q-item-section>Unpublish</q-item-section>
+                    </q-item>
+
+                    <q-separator />
+
+                    <!-- Delete always visible -->
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="confirmDeleteDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="delete" color="negative" />
+                      </q-item-section>
+                      <q-item-section class="text-negative">
+                        Delete
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
             </q-td>
           </template>
         </q-table>
@@ -245,4 +282,37 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const editDocument = (doc) => {
+  console.log('Edit', doc)
+}
+
+const publishDocument = (doc) => {
+  doc.status = 'Published'
+}
+
+const unpublishDocument = (doc) => {
+  doc.status = 'Validated'
+}
+
+const confirmDeleteDocument = (doc) => {
+  $q.dialog({
+    title: 'Confirm deletion',
+    message: `Are you sure you want to delete "${doc.title}"?`,
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    deleteDocument(doc)
+  })
+}
+
+const deleteDocument = (doc) => {
+  rows.value = rows.value.filter(d => d.id !== doc.id)
+
+  $q.notify({
+    color: 'positive',
+    message: 'Document deleted',
+  })
+}
+
 </script>
