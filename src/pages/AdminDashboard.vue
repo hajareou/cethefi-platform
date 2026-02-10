@@ -165,7 +165,7 @@
                     </q-item>
                     <!-- SUBMITTED FOR REVIEW -->
                     <q-item
-                      v-if="props.row.status === STATUS.PENDING"
+                      v-if="props.row.status === STATUS.SUBMITTED"
                       clickable
                       v-close-popup
                       @click="approveToReviewed(props.row)"
@@ -177,7 +177,7 @@
                     </q-item>
 
                     <q-item
-                      v-if="props.row.status === 'Submitted for review'"
+                      v-if="props.row.status === STATUS.SUBMITTED"
                       clickable
                       v-close-popup
                       @click="rejectToDraft(props.row)"
@@ -259,7 +259,7 @@ const STATUS = {
   DRAFT: 'drafts',
   REVIEWED: 'reviewed',
   PUBLISHED: 'published',
-  PENDING: 'pending',
+  SUBMITTED: 'Submitted for review',
 }
 
 const githubIcon =
@@ -294,7 +294,7 @@ const columns = [
     label: 'Year',
     field: 'year',
     sortable: true,
-    align: 'left',
+    align: 'center',
     sort: (a, b) => a - b
   },
   {
@@ -303,7 +303,7 @@ const columns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
-    sort: (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    sort: (a, b) => (Date.parse(a) || 0) - (Date.parse(b) || 0)
   },
   { name: 'status', 
     align: 'center', 
@@ -321,7 +321,7 @@ const columns = [
 const counters = computed(() => {
   const total = rows.value.length
   const waiting = rows.value.filter(
-    r => r.status === STATUS.DRAFT
+    r => r.status === STATUS.SUBMITTED
   ).length
   const published = rows.value.filter(
     r => r.status === STATUS.PUBLISHED
@@ -341,7 +341,7 @@ const formatStatus = (status) => {
 const getStatusColor = (status) => {
   if (status === STATUS.PUBLISHED) return { bg: 'green-1', text: 'green-8' }
   if (status === STATUS.REVIEWED) return { bg: 'blue-1', text: 'blue-8' }
-  if (status === STATUS.DRAFT) return { bg: 'orange-1', text: 'orange-9' }
+  if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
   return { bg: 'grey-2', text: 'grey-8' }
 }
 
@@ -393,7 +393,7 @@ onMounted(() => {
 })
 
 const submitForReview = (doc) => {
-  doc.status = STATUS.PENDING
+  doc.status = STATUS.SUBMITTED
   closeMenu()
 }
 
@@ -413,7 +413,7 @@ const publishDocument = (doc) => {
 }
 
 const unpublishDocument = (doc) => {
-  doc.status = STATUS.REVIEWED
+  doc.status = STATUS.DRAFT
   closeMenu()
 }
 
