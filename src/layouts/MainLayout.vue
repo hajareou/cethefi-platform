@@ -160,10 +160,14 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-// User profile (now only name)
-const user = ref({
-  name: 'Françoise Rubellin',
-})
+const profileKey = 'userProfile'
+
+// Load from localStorage or fallback to default
+const user = ref(
+  JSON.parse(localStorage.getItem(profileKey)) || {
+    name: 'Françoise Rubellin',
+  }
+)
 
 // Avatar initials derived from the name (so we don't store initials anymore)
 const initials = computed(() => {
@@ -190,6 +194,10 @@ const saveProfile = () => {
   }
 
   user.value.name = name
+
+  // Save to localStorage
+  localStorage.setItem(profileKey, JSON.stringify(user.value))
+
   showEditDialog.value = false
 
   $q.notify({ color: 'positive', message: 'Profile updated' })
