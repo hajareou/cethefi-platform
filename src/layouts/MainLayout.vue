@@ -87,7 +87,7 @@
             <q-item-section class="text-weight-medium text-size-16">
               User Management
             </q-item-section>
-          </q-item>Avatar imports from the GitHub
+          </q-item>
           <q-separator />
 
           <q-item
