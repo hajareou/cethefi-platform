@@ -32,9 +32,7 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">
-                Waiting for review
-              </div>
+              <div class="text-caption text-grey-7 text-weight-medium">Waiting for review</div>
               <div class="text-h4 text-weight-bolder text-grey-9">
                 {{ counters.waiting }}
               </div>
@@ -126,19 +124,12 @@
 
           <template v-slot:body-cell-action="props">
             <q-td :props="props" class="text-center">
-              <q-btn
-                flat
-                round
-                dense
-                icon="more_vert"
-                color="grey-8"
-              >
+              <q-btn flat round dense icon="more_vert" color="grey-8">
                 <q-menu
                   :model-value="openMenuId === props.row.id"
-                  @update:model-value="val => setMenuOpen(props.row.id, val)"
+                  @update:model-value="(val) => setMenuOpen(props.row.id, val)"
                 >
                   <q-list style="min-width: 200px">
-
                     <!-- DRAFT -->
                     <q-item
                       v-if="props.row.status === STATUS.DRAFT"
@@ -162,6 +153,31 @@
                         <q-icon name="send" />
                       </q-item-section>
                       <q-item-section>Submit for review</q-item-section>
+                    </q-item>
+
+                    <!-- SUBMITTED FOR REVIEW -->
+                    <q-item
+                      v-if="props.row.status === STATUS.SUBMITTED"
+                      clickable
+                      v-close-popup
+                      @click="approveToReviewed(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="task_alt" />
+                      </q-item-section>
+                      <q-item-section>Approve</q-item-section>
+                    </q-item>
+
+                    <q-item
+                      v-if="props.row.status === STATUS.SUBMITTED"
+                      clickable
+                      v-close-popup
+                      @click="rejectToDraft(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="undo" />
+                      </q-item-section>
+                      <q-item-section>Reject</q-item-section>
                     </q-item>
 
                     <!-- REVIEWED -->
@@ -193,19 +209,12 @@
                     <q-separator />
 
                     <!-- DELETE (always available) -->
-                    <q-item
-                      clickable
-                      v-close-popup
-                      @click="confirmDeleteDocument(props.row)"
-                    >
+                    <q-item clickable v-close-popup @click="confirmDeleteDocument(props.row)">
                       <q-item-section avatar>
                         <q-icon name="delete" color="negative" />
                       </q-item-section>
-                      <q-item-section class="text-negative">
-                        Delete
-                      </q-item-section>
+                      <q-item-section class="text-negative"> Delete </q-item-section>
                     </q-item>
-
                   </q-list>
                 </q-menu>
               </q-btn>
@@ -232,9 +241,10 @@ const repo = 'leafwriter-test'
 
 const INDEX_JSON_PATH = 'index.json'
 const STATUS = {
-  DRAFT: 'drafts',
-  REVIEWED: 'reviewed',
-  PUBLISHED: 'published',
+  DRAFT: 'Draft',
+  SUBMITTED: 'Submitted for review',
+  REVIEWED: 'Reviewed',
+  PUBLISHED: 'Published',
 }
 
 const githubIcon =
@@ -242,7 +252,7 @@ const githubIcon =
 
 const pagination = ref({
   page: 1,
-  rowsPerPage: 10,     // default
+  rowsPerPage: 10, // default
   sortBy: 'title',
   descending: false,
 })
@@ -270,7 +280,7 @@ const columns = [
     field: 'year',
     sortable: true,
     align: 'left',
-    sort: (a, b) => a - b
+    sort: (a, b) => a - b,
   },
   {
     name: 'last_modified',
@@ -278,29 +288,16 @@ const columns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
-    sort: (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    sort: (a, b) => new Date(a).getTime() - new Date(b).getTime(),
   },
-  { name: 'status', 
-    align: 'center', 
-    label: 'Status', 
-    field: 'status', 
-    sortable: true 
-  },
-  { name: 'action', 
-    align: 'center', 
-    label: 'Action', 
-    field: 'action'   
-},
+  { name: 'status', align: 'center', label: 'Status', field: 'status', sortable: true },
+  { name: 'action', align: 'center', label: 'Action', field: 'action' },
 ]
 
 const counters = computed(() => {
   const total = rows.value.length
-  const waiting = rows.value.filter(
-    r => r.status === STATUS.DRAFT
-  ).length
-  const published = rows.value.filter(
-    r => r.status === STATUS.PUBLISHED
-  ).length
+  const waiting = rows.value.filter((r) => r.status === STATUS.SUBMITTED).length
+  const published = rows.value.filter((r) => r.status === STATUS.PUBLISHED).length
 
   return { total, waiting, published }
 })
@@ -313,10 +310,23 @@ const formatStatus = (status) => {
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
+const normalizeStatus = (status) => {
+  if (!status) return 'Unknown'
+  const value = status.toString().trim().toLowerCase()
+  if (value === 'draft' || value === 'drafts') return STATUS.DRAFT
+  if (value === 'submitted' || value === 'submitted for review' || value === 'under review') {
+    return STATUS.SUBMITTED
+  }
+  if (value === 'reviewed') return STATUS.REVIEWED
+  if (value === 'published') return STATUS.PUBLISHED
+  return status
+}
+
 const getStatusColor = (status) => {
   if (status === STATUS.PUBLISHED) return { bg: 'green-1', text: 'green-8' }
   if (status === STATUS.REVIEWED) return { bg: 'blue-1', text: 'blue-8' }
-  if (status === STATUS.DRAFT) return { bg: 'orange-1', text: 'orange-9' }
+  if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
+  if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
   return { bg: 'grey-2', text: 'grey-8' }
 }
 
@@ -335,7 +345,7 @@ async function fetchGithubData() {
       author: doc?.author ?? '-',
       year: doc?.year ?? null,
       lastModified: doc?.last_modified ?? null,
-      status: doc?.status ?? 'unknown',
+      status: normalizeStatus(doc?.status),
       _path: doc?.storage_path ?? null,
     }))
 
@@ -368,6 +378,16 @@ onMounted(() => {
 })
 
 const submitForReview = (doc) => {
+  doc.status = STATUS.SUBMITTED
+  closeMenu()
+}
+
+const rejectToDraft = (doc) => {
+  doc.status = STATUS.DRAFT
+  closeMenu()
+}
+
+const approveToReviewed = (doc) => {
   doc.status = STATUS.REVIEWED
   closeMenu()
 }
@@ -378,7 +398,7 @@ const publishDocument = (doc) => {
 }
 
 const unpublishDocument = (doc) => {
-  doc.status = STATUS.REVIEWED
+  doc.status = STATUS.DRAFT
   closeMenu()
 }
 
@@ -394,7 +414,7 @@ const confirmDeleteDocument = (doc) => {
 }
 
 const deleteDocument = (doc) => {
-  rows.value = rows.value.filter(d => d.id !== doc.id)
+  rows.value = rows.value.filter((d) => d.id !== doc.id)
 
   $q.notify({
     color: 'positive',
@@ -412,5 +432,4 @@ const setMenuOpen = (id, val) => {
 const closeMenu = () => {
   openMenuId.value = null
 }
-
 </script>
