@@ -125,6 +125,7 @@
           class="text-grey-9"
           :loading="loading"
           v-model:pagination="pagination"
+          @row-click="onRowClick"
         >
           <template v-slot:body-cell-status="props">
             <q-td :props="props" class="text-center">
@@ -142,7 +143,7 @@
 
           <template v-slot:body-cell-action="props">
             <q-td :props="props" class="text-center">
-              <q-btn flat round dense icon="more_vert" color="grey-8">
+              <q-btn flat round dense icon="more_vert" color="grey-8" @click.stop>
                 <q-menu
                   :model-value="openMenuId === props.row.id"
                   @update:model-value="(val) => setMenuOpen(props.row.id, val)"
@@ -250,6 +251,27 @@
             </q-td>
           </template>
         </q-table>
+        <q-dialog v-model="showDocViewer" maximized>
+          <q-card class="bg-white">
+            <q-card-section class="row items-center justify-between">
+              <div>
+                <div class="text-h6">{{ selectedDoc?.title }}</div>
+                <div class="text-caption text-grey-6">{{ selectedDoc?._path }}</div>
+              </div>
+              <q-btn flat round icon="close" v-close-popup />
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-section>
+              <q-inner-loading :showing="docLoading" />
+
+              <q-scroll-area style="height: 70vh;">
+                <pre style="white-space: pre-wrap; margin: 0;">{{ docText }}</pre>
+              </q-scroll-area>
+            </q-card-section>
+          </q-card>
+        </q-dialog>
       </q-card-section>
     </q-card>
   </q-page>
@@ -257,7 +279,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { getRepoFileJson, getLastCommit } from '../services/githubRepo.js'
+import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave } from 'vue-router'
 
@@ -620,5 +642,39 @@ const filteredRows = computed(() => {
   // Otherwise show only rows whose status is selected
   return rows.value.filter(r => selected.includes(r.status))
 })
+
+const onRowClick = (evt, row) => {
+  openDocViewer(row)
+}
+
+const showDocViewer = ref(false)
+const selectedDoc = ref(null)
+const docText = ref('')
+const docLoading = ref(false)
+
+const openDocViewer = async (doc) => {
+  if (!doc?._path) {
+    $q.notify({ color: 'negative', message: 'No file path available for this document' })
+    return
+  }
+
+  selectedDoc.value = doc
+  docText.value = ''
+  showDocViewer.value = true
+  docLoading.value = true
+
+  try {
+    docText.value = await getRepoFileText({
+      owner,
+      repo,
+      path: doc._path,
+      ref: 'main', 
+    })
+  } catch (e) {
+    $q.notify({ color: 'negative', message: e?.message || 'Failed to load document' })
+  } finally {
+    docLoading.value = false
+  }
+}
 
 </script>
