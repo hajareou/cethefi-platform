@@ -192,6 +192,17 @@
                       </q-item-section>
                       <q-item-section>Publish</q-item-section>
                     </q-item>
+                    <q-item
+                      v-if="props.row.status === STATUS.REVIEWED"
+                      clickable
+                      v-close-popup
+                      @click="editDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>Edit</q-item-section>
+                    </q-item>
 
                     <!-- PUBLISHED -->
                     <q-item
