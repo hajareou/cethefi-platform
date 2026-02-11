@@ -279,7 +279,7 @@ const columns = [
     label: 'Year',
     field: 'year',
     sortable: true,
-    align: 'left',
+    align: 'center',
     sort: (a, b) => a - b,
   },
   {
@@ -288,7 +288,7 @@ const columns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
-    sort: (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+    sort: (a, b) => (Date.parse(a) || 0) - (Date.parse(b) || 0),
   },
   { name: 'status', align: 'center', label: 'Status', field: 'status', sortable: true },
   { name: 'action', align: 'center', label: 'Action', field: 'action' },
@@ -349,6 +349,13 @@ async function fetchGithubData() {
       _path: doc?.storage_path ?? null,
     }))
 
+    const overrides = loadOverrides()
+
+    for (const row of flat) {
+      const o = overrides[row.id]
+      if (o?.status) row.status = o.status
+    }
+
     flat.sort((a, b) =>
       (a.status + a.title).localeCompare(b.status + b.title, 'fr', { sensitivity: 'base' }),
     )
@@ -379,26 +386,31 @@ onMounted(() => {
 
 const submitForReview = (doc) => {
   doc.status = STATUS.SUBMITTED
+  saveDocOverride(doc)
   closeMenu()
 }
 
 const rejectToDraft = (doc) => {
   doc.status = STATUS.DRAFT
+  saveDocOverride(doc)
   closeMenu()
 }
 
 const approveToReviewed = (doc) => {
   doc.status = STATUS.REVIEWED
+  saveDocOverride(doc)
   closeMenu()
 }
 
 const publishDocument = (doc) => {
   doc.status = STATUS.PUBLISHED
+  saveDocOverride(doc)
   closeMenu()
 }
 
 const unpublishDocument = (doc) => {
   doc.status = STATUS.DRAFT
+  saveDocOverride(doc)
   closeMenu()
 }
 
@@ -416,6 +428,10 @@ const confirmDeleteDocument = (doc) => {
 const deleteDocument = (doc) => {
   rows.value = rows.value.filter((d) => d.id !== doc.id)
 
+  const overrides = loadOverrides()
+  delete overrides[doc.id]
+  saveOverrides(overrides)
+
   $q.notify({
     color: 'positive',
     message: 'Document deleted',
@@ -431,5 +447,28 @@ const setMenuOpen = (id, val) => {
 
 const closeMenu = () => {
   openMenuId.value = null
+}
+
+const DOC_OVERRIDES_KEY = 'docOverrides'
+
+const loadOverrides = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DOC_OVERRIDES_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+const saveOverrides = (overrides) => {
+  localStorage.setItem(DOC_OVERRIDES_KEY, JSON.stringify(overrides))
+}
+
+// Save one document override (by id)
+const saveDocOverride = (doc) => {
+  const overrides = loadOverrides()
+  overrides[doc.id] = {
+    status: doc.status,
+  }
+  saveOverrides(overrides)
 }
 </script>

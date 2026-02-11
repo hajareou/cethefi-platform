@@ -14,20 +14,37 @@
 
         <q-space />
 
-        <div class="row items-center no-wrap cursor-pointer q-ml-md">
-          <q-avatar color="indigo-9" text-color="white" size="40px" font-size="16px">
-            {{ user.initials }}
-          </q-avatar>
+        <q-btn flat no-caps class="q-ml-md" padding="none">
+          <div class="row items-center no-wrap">
+            <q-avatar color="indigo-9" text-color="white" size="40px" font-size="16px">
+              {{ initials }}
+            </q-avatar>
 
-          <div class="q-ml-sm text-right gt-xs line-height-tight">
-            <div class="text-weight-bold text-body2 text-grey-9">
-              {{ user.name }}
-            </div>
-            <div class="text-caption text-grey-5" style="line-height: 12px">
-              {{ user.role }}
+            <div class="q-ml-sm text-right gt-xs line-height-tight">
+              <div class="text-weight-bold text-body2 text-grey-9">
+                {{ user.name }}
+              </div>
             </div>
           </div>
-        </div>
+
+          <q-menu anchor="bottom right" self="top right">
+            <q-list style="min-width: 180px">
+              <q-item clickable v-close-popup @click="openEditDialog">
+                <q-item-section avatar>
+                  <q-icon name="edit" />
+                </q-item-section>
+                <q-item-section>Edit</q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="logout">
+                <q-item-section avatar>
+                  <q-icon name="logout" />
+                </q-item-section>
+                <q-item-section>Log out</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -71,6 +88,37 @@
               User Management
             </q-item-section>
           </q-item>
+          <q-separator />
+
+          <q-item
+            clickable
+            tag="a"
+            href="https://github.com/hajareou/cethefi-platform"
+            target="_blank"
+            rel="noopener"
+          >
+            <q-item-section avatar>
+              <q-icon name="open_in_new" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>GitHub Repository</q-item-label>
+            </q-item-section>
+          </q-item>
+          
+          <q-item
+            clickable
+            tag="a"
+            href="http://cethefi.org/"
+            target="_blank"
+            rel="noopener"
+          >
+            <q-item-section avatar>
+              <q-icon name="public" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Cethefi Website</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
 
         <q-space />
@@ -82,23 +130,82 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <q-dialog v-model="showEditDialog" persistent>
+      <q-card style="min-width: 360px">
+        <q-card-section>
+          <div class="text-h6">Edit profile</div>
+        </q-card-section>
+
+        <q-card-section class="q-gutter-md">
+          <q-input v-model="editName" label="Name" outlined dense />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+          <q-btn unelevated label="Save" color="indigo-9" @click="saveProfile" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useQuasar } from 'quasar'
+
+const $q = useQuasar()
 
 const leftDrawerOpen = ref(false)
-
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-const user = ref({
-  name: 'Françoise Rubellin',
-  role: 'Admin',
-  initials: 'FR',
+const profileKey = 'userProfile'
+
+// Load from localStorage or fallback to default
+const user = ref(
+  JSON.parse(localStorage.getItem(profileKey)) || {
+    name: 'Françoise Rubellin',
+  }
+)
+
+// Avatar initials derived from the name (so we don't store initials anymore)
+const initials = computed(() => {
+  const parts = user.value.name.trim().split(/\s+/).filter(Boolean)
+  const first = parts[0]?.[0] || ''
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : ''
+  return (first + last).toUpperCase() || '?'
 })
+
+// Edit dialog state
+const showEditDialog = ref(false)
+const editName = ref('')
+
+const openEditDialog = () => {
+  editName.value = user.value.name
+  showEditDialog.value = true
+}
+
+const saveProfile = () => {
+  const name = editName.value.trim()
+  if (!name) {
+    $q.notify({ color: 'negative', message: 'Name cannot be empty' })
+    return
+  }
+
+  user.value.name = name
+
+  // Save to localStorage
+  localStorage.setItem(profileKey, JSON.stringify(user.value))
+
+  showEditDialog.value = false
+
+  $q.notify({ color: 'positive', message: 'Profile updated' })
+}
+
+const logout = () => {
+  $q.notify({ color: 'info', message: 'Logout not implemented yet' })
+}
 </script>
 
 <style scoped>
