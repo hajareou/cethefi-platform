@@ -1,16 +1,22 @@
 const routes = [
+  // Login page (no layout, no sidebar)
+  {
+    path: '/login',
+    component: () => import('pages/LoginPage.vue'),
+  },
+
+  // Main app with sidebar layout
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', redirect: '/admin' },
-      { path: 'admin', component: () => import('pages/AdminDashboard.vue') },
-      { path: 'admin/users', component: () => import('pages/UserManagement.vue') },
+      { path: '', redirect: '/login' },
+      { path: 'dashboard', component: () => import('pages/AdminDashboard.vue') },
+      { path: 'users', component: () => import('pages/UserManagement.vue') },
     ],
   },
 
-  // Always leave this as last one,
-  // but you can also remove it
+  // Always keep this last
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),

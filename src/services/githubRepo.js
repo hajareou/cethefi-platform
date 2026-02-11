@@ -58,3 +58,10 @@ export async function getLastCommit({ owner, repo, path }) {
   const data = await res.json()
   return data[0] // le premier élément est le commit le plus récent
 }
+// Fetch a file as raw text (XML) from GitHub
+export async function getRepoFileText({ owner, repo, path, ref = 'main' }) {
+  const url = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`)
+  return await res.text()
+}

@@ -6,7 +6,7 @@
       <q-card-section class="q-pa-lg">
 
         <!-- ===== Header row (title + description + Add User button) ===== -->
-        <div class="row items-center justify-between q-mb-xl">
+        <div class="row items-center justify-between q-mb-md">
           <div>
             <div class="text-h6 text-weight-bold text-grey-9">Authorized Users</div>
             <div class="text-caption text-grey-6">
@@ -27,8 +27,8 @@
         </div>
 
         <!-- ===== Search bar row ===== -->
-        <div class="row items-center q-col-gutter-sm q-mb-md">
-          <div class="col-12 col-md-6">
+        <div class="q-mb-mdx">
+          <div class="q-mb-md">
             <!-- Text filter used by q-table (:filter="filter") -->
             <q-input
               outlined
@@ -36,11 +36,18 @@
               debounce="300"
               v-model="filter"
               placeholder="Search name or email..."
+              class="q-mb-sm"
             >
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
             </q-input>
+            <!-- Permission filters (like document status filters) -->
+            <div class="row items-center q-gutter-md">
+              <q-checkbox v-model="permFilter.canEdit" label="Can edit" dense />
+              <q-checkbox v-model="permFilter.canValidate" label="Can validate" dense />
+              <q-checkbox v-model="permFilter.canPublish" label="Can publish" dense />
+            </div>
           </div>
         </div>
 
@@ -51,7 +58,7 @@
              - pagination: controlled by v-model so we can persist it in localStorage
         -->
         <q-table
-          :rows="users"
+          :rows="filteredUsers"
           :columns="columns"
           row-key="email"
           flat
@@ -168,8 +175,9 @@
  * - onMounted: runs code when the component loads
  * - watch: reacts to changes (used for auto-saving)
  */
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
+import { onBeforeRouteLeave } from 'vue-router'
 
 // We load initial users from /public/data/users.json, but we also persist edits to localStorage.
 // storage.js handles: loadUsers (JSON + localStorage fallback) and saveUsers (localStorage write).
@@ -188,28 +196,55 @@ const $q = useQuasar()
  */
 const filter = ref('')
 
+// Permission filter checkboxes (all false by default)
+const permFilter = ref({
+  canEdit: false,
+  canValidate: false,
+  canPublish: false,
+})
+
+// Filter users by selected permissions:
+// - if no permission selected -> show ALL users
+// - if some selected -> show users that match ANY selected permission
+const filteredUsers = computed(() => {
+  const selected = []
+
+  if (permFilter.value.canEdit) selected.push('canEdit')
+  if (permFilter.value.canValidate) selected.push('canValidate')
+  if (permFilter.value.canPublish) selected.push('canPublish')
+
+  // Nothing selected => no filtering
+  if (selected.length === 0) return users.value
+
+  // Show users that match at least one selected permission
+  return users.value.filter((u) => selected.every((key) => u[key] === true))
+})
+
 /**
  * ===== Pagination persistence =====
  * We store the q-table pagination state in localStorage so that
  * rows-per-page and sorting stay the same after reload.
  */
-const paginationKey = 'usersTablePagination'
-const pagination = ref(
-  // Read from localStorage if present; otherwise use default config
-  JSON.parse(localStorage.getItem(paginationKey) || 'null') || {
-    page: 1,
-    rowsPerPage: 5, // default value (initial page size)
-    sortBy: 'name',
-    descending: false,
-  }
+const pageSizeKey = 'usersRowsPerPage'
+
+// pagination state (only rowsPerPage is restored from sessionStorage)
+const pagination = ref({
+  page: 1,
+  rowsPerPage: Number(sessionStorage.getItem(pageSizeKey)) || 5,
+  sortBy: 'name',
+  descending: false,
+})
+
+// save only rowsPerPage while staying on this page
+watch(
+  () => pagination.value.rowsPerPage,
+  (val) => sessionStorage.setItem(pageSizeKey, String(val))
 )
 
-// When pagination changes (page, rowsPerPage, sort), save it to localStorage
-watch(
-  pagination,
-  (val) => localStorage.setItem(paginationKey, JSON.stringify(val)),
-  { deep: true }
-)
+// clear rowsPerPage when leaving the route
+onBeforeRouteLeave(() => {
+  sessionStorage.removeItem(pageSizeKey)
+})
 
 /**
  * ===== Table columns definition =====
