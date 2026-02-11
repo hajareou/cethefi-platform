@@ -14,7 +14,18 @@
 
         <q-space />
 
-        <q-btn flat no-caps class="q-ml-md" padding="none">
+        <!-- If user is guest: show login button -->
+        <q-btn
+          v-if="isGuest"
+          unelevated
+          no-caps
+          label="Login"
+          color="indigo-9"
+          @click="goToLogin"
+        />
+
+        <!-- If logged in: show avatar + dropdown -->
+        <q-btn v-else flat no-caps class="q-ml-md" padding="none">
           <div class="row items-center no-wrap">
             <q-avatar color="indigo-9" text-color="white" size="40px" font-size="16px">
               {{ initials }}
@@ -64,8 +75,8 @@
           <q-item
             clickable
             v-ripple
-            to="/admin"
-            active-class="bg-white text-indigo-9"
+            to="/dashboard"
+            active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
             <q-item-section avatar>
@@ -75,9 +86,10 @@
           </q-item>
 
           <q-item
+            v-if="!isGuest"
             clickable
             v-ripple
-            to="/admin/users"
+            to="/users"
             active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
@@ -130,7 +142,7 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-dialog v-model="showEditDialog" persistent>
+    <q-dialog v-if="!isGuest" v-model="showEditDialog" persistent>
       <q-card style="min-width: 360px">
         <q-card-section>
           <div class="text-h6">Edit profile</div>
@@ -152,8 +164,13 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const $q = useQuasar()
+
+const authMode = ref(localStorage.getItem('authMode') || 'guest')
+const isGuest = computed(() => authMode.value === 'guest')
 
 const leftDrawerOpen = ref(false)
 function toggleLeftDrawer() {
@@ -204,7 +221,13 @@ const saveProfile = () => {
 }
 
 const logout = () => {
-  $q.notify({ color: 'info', message: 'Logout not implemented yet' })
+  localStorage.setItem('authMode', 'guest')
+  authMode.value = 'guest'
+  router.push('/login')
+}
+
+const goToLogin = () => {
+  router.push('/login')
 }
 </script>
 
