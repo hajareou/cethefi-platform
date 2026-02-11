@@ -6,7 +6,7 @@
       <q-card-section class="q-pa-lg">
 
         <!-- ===== Header row (title + description + Add User button) ===== -->
-        <div class="row items-center justify-between q-mb-xl">
+        <div class="row items-center justify-between q-mb-md">
           <div>
             <div class="text-h6 text-weight-bold text-grey-9">Authorized Users</div>
             <div class="text-caption text-grey-6">
@@ -36,11 +36,18 @@
               debounce="300"
               v-model="filter"
               placeholder="Search name or email..."
+              class="q-mb-sm"
             >
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
             </q-input>
+            <!-- Permission filters (like document status filters) -->
+            <div class="row items-center q-gutter-md">
+              <q-checkbox v-model="permFilter.canEdit" label="Can edit" dense />
+              <q-checkbox v-model="permFilter.canValidate" label="Can validate" dense />
+              <q-checkbox v-model="permFilter.canPublish" label="Can publish" dense />
+            </div>
           </div>
         </div>
 
@@ -51,7 +58,7 @@
              - pagination: controlled by v-model so we can persist it in localStorage
         -->
         <q-table
-          :rows="users"
+          :rows="filteredUsers"
           :columns="columns"
           row-key="email"
           flat
@@ -168,7 +175,7 @@
  * - onMounted: runs code when the component loads
  * - watch: reacts to changes (used for auto-saving)
  */
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
 
 // We load initial users from /public/data/users.json, but we also persist edits to localStorage.
@@ -187,6 +194,30 @@ const $q = useQuasar()
  * q-table will filter by matching text across visible fields.
  */
 const filter = ref('')
+
+// Permission filter checkboxes (all false by default)
+const permFilter = ref({
+  canEdit: false,
+  canValidate: false,
+  canPublish: false,
+})
+
+// Filter users by selected permissions:
+// - if no permission selected -> show ALL users
+// - if some selected -> show users that match ANY selected permission
+const filteredUsers = computed(() => {
+  const selected = []
+
+  if (permFilter.value.canEdit) selected.push('canEdit')
+  if (permFilter.value.canValidate) selected.push('canValidate')
+  if (permFilter.value.canPublish) selected.push('canPublish')
+
+  // Nothing selected => no filtering
+  if (selected.length === 0) return users.value
+
+  // Show users that match at least one selected permission
+  return users.value.filter((u) => selected.every((key) => u[key] === true))
+})
 
 /**
  * ===== Pagination persistence =====
