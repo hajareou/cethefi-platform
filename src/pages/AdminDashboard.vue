@@ -251,25 +251,144 @@
             </q-td>
           </template>
         </q-table>
-        <q-dialog v-model="showDocViewer" maximized>
+        <q-dialog v-model="showDocViewer" full-width full-height>
           <q-card class="bg-white">
+
+            <!-- Header -->
             <q-card-section class="row items-center justify-between">
               <div>
                 <div class="text-h6">{{ selectedDoc?.title }}</div>
-                <div class="text-caption text-grey-6">{{ selectedDoc?._path }}</div>
+                <div class="text-caption text-grey-6">
+                  Status: {{ formatStatus(selectedDoc?.status) }}
+                </div>
               </div>
+
               <q-btn flat round icon="close" v-close-popup />
             </q-card-section>
 
             <q-separator />
 
-            <q-card-section>
+            <!-- Content (scrollable) -->
+            <q-card-section class="q-pa-none">
               <q-inner-loading :showing="docLoading" />
 
               <q-scroll-area style="height: 70vh;">
-                <pre style="white-space: pre-wrap; margin: 0;">{{ docText }}</pre>
+                <div class="q-pa-md">
+                  <pre style="white-space: pre-wrap; margin: 0;">{{ docText }}</pre>
+                </div>
               </q-scroll-area>
             </q-card-section>
+
+            <q-separator />
+
+            <!-- Footer actions -->
+            <q-card-actions align="between" class="q-pa-md">
+
+              <!-- Guest: show only login CTA -->
+              <div v-if="isGuest" class="row items-center justify-between full-width">
+                <div class="text-caption text-grey-6">
+                  You are in guest mode. Login to edit.
+                </div>
+
+                <q-btn
+                  unelevated
+                  no-caps
+                  color="indigo-9"
+                  label="Login to edit"
+                  @click="goToLogin"
+                />
+              </div>
+
+              <!-- Logged-in: show status-based actions -->
+              <div v-else class="row items-center justify-between full-width">
+
+                <!-- Left side: main workflow actions -->
+                <div class="row q-gutter-sm">
+
+                  <!-- DRAFT -->
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    outline
+                    no-caps
+                    icon="send"
+                    label="Submit for review"
+                    color="orange-9"
+                    @click="submitForReview(selectedDoc)"
+                  />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    outline
+                    no-caps
+                    icon="edit"
+                    label="Edit"
+                    color="grey-8"
+                    @click="editDocument(selectedDoc)"
+                  />
+
+                  <!-- SUBMITTED -->
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    outline
+                    no-caps
+                    icon="task_alt"
+                    label="Approve"
+                    color="blue-8"
+                    @click="approveToReviewed(selectedDoc)"
+                  />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    outline
+                    no-caps
+                    icon="undo"
+                    label="Reject"
+                    color="grey-8"
+                    @click="rejectToDraft(selectedDoc)"
+                  />
+
+                  <!-- REVIEWED -->
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    unelevated
+                    no-caps
+                    icon="publish"
+                    label="Publish"
+                    color="positive"
+                    @click="publishDocument(selectedDoc)"
+                  />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    outline
+                    no-caps
+                    icon="edit"
+                    label="Edit"
+                    color="grey-8"
+                    @click="editDocument(selectedDoc)"
+                  />
+
+
+                  <!-- PUBLISHED -->
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.PUBLISHED"
+                    outline
+                    no-caps
+                    icon="visibility_off"
+                    label="Unpublish"
+                    color="negative"
+                    @click="unpublishDocument(selectedDoc)"
+                  />
+                </div>
+
+                <!-- Right side: delete -->
+                <q-btn
+                  flat
+                  no-caps
+                  icon="delete"
+                  color="negative"
+                  label="Delete"
+                  @click="confirmDeleteDocument(selectedDoc)"
+                />
+              </div>
+            </q-card-actions>
           </q-card>
         </q-dialog>
       </q-card-section>
@@ -281,10 +400,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
-import { onBeforeRouteLeave } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
 const authMode = ref(localStorage.getItem('authMode') || 'guest')
 const isGuest = computed(() => authMode.value === 'guest')
+
+const router = useRouter()
+
+const goToLogin = () => router.push('/login')
 
 // Quasar instance for dialogs and notifications
 const $q = useQuasar()
@@ -539,6 +662,13 @@ const unpublishDocument = (doc) => {
 /*
   Delete confirmation dialog
 */
+
+  const closeDocViewer = () => {
+  showDocViewer.value = false
+  selectedDoc.value = null
+  docText.value = ''
+}
+
 const confirmDeleteDocument = (doc) => {
   $q.dialog({
     title: 'Confirm deletion',
@@ -547,6 +677,7 @@ const confirmDeleteDocument = (doc) => {
     persistent: true,
   }).onOk(() => {
     deleteDocument(doc)
+    closeDocViewer()
   })
 }
 
@@ -562,7 +693,7 @@ const deleteDocument = (doc) => {
   saveOverrides(overrides)
 
   $q.notify({
-    color: 'positive',
+    color: 'negative',
     message: 'Document deleted',
   })
 }
