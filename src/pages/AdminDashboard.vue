@@ -434,10 +434,11 @@ const loading = ref(false)
 const filter = ref('')
 
 // GitHub repository configuration
-const owner = 'hajareou'
-const repo = 'leafwriter-test'
+const owner = import.meta.env.VITE_GITHUB_OWNER
+const ownerType = import.meta.env.VITE_GITHUB_OWNER_TYPE
+const repo = import.meta.env.VITE_GITHUB_REPO
 const INDEX_JSON_PATH = 'index.json'
-
+const LEAFWRITER_URL = import.meta.env.VITE_LEAFWRITER_URL
 // Centralized status values used across the app
 const STATUS = {
   DRAFT: 'Draft',
@@ -679,6 +680,37 @@ const closeDocViewer = () => {
   showDocViewer.value = false
   selectedDoc.value = null
   docText.value = ''
+}
+
+const editDocument = (doc) => {
+  if (!doc?._path) {
+    $q.notify({ color: 'negative', message: 'No file path available for this document' })
+    return
+  }
+
+  const normalizedPath = doc._path.replace(/^\/+/, '')
+  const segments = normalizedPath.split('/').filter(Boolean)
+  const filename = segments.pop()
+  const path = segments.join('/')
+
+  if (!filename) {
+    $q.notify({ color: 'negative', message: 'Invalid document path' })
+    return
+  }
+
+  const params = new URLSearchParams({
+    provider: 'github',
+    owner,
+    ownerType,
+    repo,
+    filename,
+  })
+  if (path) params.set('path', path)
+
+  closeMenu()
+  closeDocViewer()
+
+  window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
 }
 
 const confirmDeleteDocument = (doc) => {
