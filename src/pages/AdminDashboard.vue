@@ -198,7 +198,17 @@
                       </q-item-section>
                       <q-item-section>Reject</q-item-section>
                     </q-item>
-
+                    <q-item
+                      v-if="props.row.status === STATUS.SUBMITTED"
+                      clickable
+                      v-close-popup
+                      @click="editDocument(props.row)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>Edit</q-item-section>
+                    </q-item>
                     <!-- REVIEWED -->
                     <q-item
                       v-if="props.row.status === STATUS.REVIEWED"
@@ -253,7 +263,6 @@
         </q-table>
         <q-dialog v-model="showDocViewer" full-width full-height>
           <q-card class="bg-white">
-
             <!-- Header -->
             <q-card-section class="row items-center justify-between">
               <div>
@@ -272,9 +281,9 @@
             <q-card-section class="q-pa-none">
               <q-inner-loading :showing="docLoading" />
 
-              <q-scroll-area style="height: 70vh;">
+              <q-scroll-area style="height: 70vh">
                 <div class="q-pa-md">
-                  <pre style="white-space: pre-wrap; margin: 0;">{{ docText }}</pre>
+                  <pre style="white-space: pre-wrap; margin: 0">{{ docText }}</pre>
                 </div>
               </q-scroll-area>
             </q-card-section>
@@ -283,12 +292,9 @@
 
             <!-- Footer actions -->
             <q-card-actions align="between" class="q-pa-md">
-
               <!-- Guest: show only login CTA -->
               <div v-if="isGuest" class="row items-center justify-between full-width">
-                <div class="text-caption text-grey-6">
-                  You are in guest mode. Login to edit.
-                </div>
+                <div class="text-caption text-grey-6">You are in guest mode. Login to edit.</div>
 
                 <q-btn
                   unelevated
@@ -301,10 +307,8 @@
 
               <!-- Logged-in: show status-based actions -->
               <div v-else class="row items-center justify-between full-width">
-
                 <!-- Left side: main workflow actions -->
                 <div class="row q-gutter-sm">
-
                   <!-- DRAFT -->
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.DRAFT"
@@ -344,6 +348,15 @@
                     color="grey-8"
                     @click="rejectToDraft(selectedDoc)"
                   />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    outline
+                    no-caps
+                    icon="edit"
+                    label="Edit"
+                    color="grey-8"
+                    @click="editDocument(selectedDoc)"
+                  />
 
                   <!-- REVIEWED -->
                   <q-btn
@@ -364,7 +377,6 @@
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
-
 
                   <!-- PUBLISHED -->
                   <q-btn
@@ -450,7 +462,7 @@ const pagination = ref({
 
 watch(
   () => pagination.value.rowsPerPage,
-  (val) => sessionStorage.setItem(pageSizeKey, String(val))
+  (val) => sessionStorage.setItem(pageSizeKey, String(val)),
 )
 
 onBeforeRouteLeave(() => {
@@ -663,7 +675,7 @@ const unpublishDocument = (doc) => {
   Delete confirmation dialog
 */
 
-  const closeDocViewer = () => {
+const closeDocViewer = () => {
   showDocViewer.value = false
   selectedDoc.value = null
   docText.value = ''
@@ -771,7 +783,7 @@ const filteredRows = computed(() => {
   if (selected.length === 0) return rows.value
 
   // Otherwise show only rows whose status is selected
-  return rows.value.filter(r => selected.includes(r.status))
+  return rows.value.filter((r) => selected.includes(r.status))
 })
 
 const onRowClick = (evt, row) => {
@@ -799,7 +811,7 @@ const openDocViewer = async (doc) => {
       owner,
       repo,
       path: doc._path,
-      ref: 'main', 
+      ref: 'main',
     })
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load document' })
@@ -807,5 +819,4 @@ const openDocViewer = async (doc) => {
     docLoading.value = false
   }
 }
-
 </script>
