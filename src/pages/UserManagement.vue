@@ -94,19 +94,42 @@
             </q-td>
           </template>
 
-          <!-- Custom cell: Delete action button -->
-          <template v-slot:body-cell-action="props">
+          <!-- Custom cell: Delete and Edit action button -->
+           <template v-slot:body-cell-action="props">
             <q-td :props="props" class="text-center">
-              <!-- Clicking triggers confirm dialog then deletes -->
               <q-btn
                 flat
                 round
                 dense
+                icon="more_vert"
                 color="grey-8"
-                icon="delete_outline"
-                size="sm"
-                @click="() => { console.log('delete clicked', props.row); confirmDelete(props.row) }"
-              />
+              >
+                <q-menu>
+                  <q-list style="min-width: 160px">
+
+                    <!-- Edit -->
+                    <q-item clickable v-close-popup @click="openEditUser(props.row)">
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>Edit</q-item-section>
+                    </q-item>
+
+                    <q-separator />
+
+                    <!-- Delete -->
+                    <q-item clickable v-close-popup @click="confirmDelete(props.row)">
+                      <q-item-section avatar>
+                        <q-icon name="delete" color="negative" />
+                      </q-item-section>
+                      <q-item-section class="text-negative">
+                        Delete
+                      </q-item-section>
+                    </q-item>
+
+                  </q-list>
+                </q-menu>
+              </q-btn>
             </q-td>
           </template>
         </q-table>
@@ -163,6 +186,25 @@
         <q-btn flat label="Cancel" color="grey-7" v-close-popup />
         <!-- Add validates the form and pushes a new user to the list -->
         <q-btn unelevated label="Add" color="indigo-9" @click="addUser" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <!-- ===== Edit User Dialog ===== -->
+  <q-dialog v-model="showEditUserDialog" persistent>
+    <q-card style="min-width: 420px">
+      <q-card-section>
+        <div class="text-h6">Edit user</div>
+      </q-card-section>
+
+      <q-card-section class="q-gutter-md">
+        <q-input v-model="editUser.name" label="Name" outlined dense />
+        <q-input v-model="editUser.email" label="Email" type="email" outlined dense />
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+        <q-btn unelevated label="Save" color="indigo-9" @click="saveEditedUser" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -395,4 +437,134 @@ const addUser = () => {
     message: 'User added',
   })
 }
+
+// Edit user dialogue 
+const showEditUserDialog = ref(false)
+
+// keep track of which user is being edited (by email)
+const editUserOriginalEmail = ref(null)
+
+// editable copy
+
+const editUserOriginal = ref({ name: '', email: '' })
+
+const editUser = ref({
+  name: '',
+  email: '',
+})
+
+const openEditUser = (row) => {
+  editUserOriginalEmail.value = row.email
+
+  editUserOriginal.value = {
+    name: row.name,
+    email: row.email,
+  }
+
+  editUser.value = {
+    name: row.name,
+    email: row.email,
+  }
+
+  showEditUserDialog.value = true
+}
+
+
+const saveEditedUser = () => {
+  const name = editUser.value.name.trim()
+  const email = editUser.value.email.trim()
+
+  if (!name || !email) {
+    $q.notify({ color: 'negative', message: 'Name and email are required' })
+    return
+  }
+
+  const originalName = (editUserOriginal.value.name || '').trim()
+  const originalEmail = (editUserOriginal.value.email || '').trim()
+
+  if (name === originalName && email === originalEmail) {
+    $q.notify({ color: 'info', message: 'No changes to save' })
+    showEditUserDialog.value = false
+    return
+  }
+
+  if (email !== editUserOriginalEmail.value && users.value.some((u) => u.email === email)) {
+    $q.notify({ color: 'negative', message: 'A user with this email already exists' })
+    return
+  }
+
+  const idx = users.value.findIndex((u) => u.email === editUserOriginalEmail.value)
+  if (idx === -1) {
+    $q.notify({ color: 'negative', message: 'User not found' })
+    return
+  }
+
+  users.value[idx] = { ...users.value[idx], name, email }
+
+  showEditUserDialog.value = false
+  $q.notify({ color: 'positive', message: 'User updated' })
+}
+
+// --- Notify when permissions change (debounced) ---
+let permToastTimer = null
+let prevPermSnapshot = new Map()
+
+// build a snapshot we can compare later (by email)
+const snapshotPerms = (list) => {
+  const m = new Map()
+  for (const u of list) {
+    m.set(u.email, {
+      canEdit: !!u.canEdit,
+      canValidate: !!u.canValidate,
+      canPublish: !!u.canPublish,
+    })
+  }
+  return m
+}
+
+// initialize snapshot once users are loaded (first change will come after load)
+watch(
+  users,
+  (val) => {
+    // Always persist changes (your existing behavior)
+    saveUsers(val)
+
+    // If it's the very first time or we don't have a baseline yet, set it and stop
+    if (prevPermSnapshot.size === 0) {
+      prevPermSnapshot = snapshotPerms(val)
+      return
+    }
+
+    // Detect if any permission changed
+    let changed = false
+    for (const u of val) {
+      const prev = prevPermSnapshot.get(u.email)
+      if (!prev) continue
+      if (
+        prev.canEdit !== !!u.canEdit ||
+        prev.canValidate !== !!u.canValidate ||
+        prev.canPublish !== !!u.canPublish
+      ) {
+        changed = true
+        break
+      }
+    }
+
+    // Update snapshot for next comparison
+    prevPermSnapshot = snapshotPerms(val)
+
+    if (!changed) return
+
+    // Debounce notifications so you don't get spammed on rapid clicks
+    if (permToastTimer) clearTimeout(permToastTimer)
+    permToastTimer = setTimeout(() => {
+      $q.notify({
+        message: 'Permissions updated',
+        color: 'positive',
+      })
+    }, 250)
+  },
+  { deep: true }
+)
+
 </script>
