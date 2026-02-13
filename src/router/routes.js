@@ -1,11 +1,12 @@
 const routes = [
-  // Login page (no layout, no sidebar)
   {
     path: '/login',
     component: () => import('pages/LoginPage.vue'),
   },
-
-  // Main app with sidebar layout
+  {
+    path: '/auth/callback',
+    component: () => import('pages/AuthCallback.vue'),
+  },
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
@@ -15,8 +16,6 @@ const routes = [
       { path: 'users', component: () => import('pages/UserManagement.vue') },
     ],
   },
-
-  // Always keep this last
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
