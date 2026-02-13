@@ -116,14 +116,8 @@
               <q-item-label>GitHub Repository</q-item-label>
             </q-item-section>
           </q-item>
-          
-          <q-item
-            clickable
-            tag="a"
-            href="http://cethefi.org/"
-            target="_blank"
-            rel="noopener"
-          >
+
+          <q-item clickable tag="a" href="http://cethefi.org/" target="_blank" rel="noopener">
             <q-item-section avatar>
               <q-icon name="public" />
             </q-item-section>
@@ -169,21 +163,34 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const $q = useQuasar()
 
-const authMode = ref(localStorage.getItem('authMode') || 'guest')
-const isGuest = computed(() => authMode.value === 'guest')
+const authSessionKey = 'authSession'
+
+const getStoredSession = () => {
+  const raw = localStorage.getItem(authSessionKey)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+const authSession = ref(getStoredSession())
+const isGuest = computed(() => {
+  if (!authSession.value) return true
+  if (authSession.value.type === 'guest') return true
+  return authSession.value?.user?.role === 'guest'
+})
 
 const leftDrawerOpen = ref(false)
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-const profileKey = 'userProfile'
-
-// Load from localStorage or fallback to default
 const user = ref(
-  JSON.parse(localStorage.getItem(profileKey)) || {
-    name: 'Françoise Rubellin',
-  }
+  authSession.value?.user || {
+    name: 'Guest',
+  },
 )
 
 // Avatar initials derived from the name (so we don't store initials anymore)
@@ -212,8 +219,16 @@ const saveProfile = () => {
 
   user.value.name = name
 
-  // Save to localStorage
-  localStorage.setItem(profileKey, JSON.stringify(user.value))
+  if (authSession.value) {
+    authSession.value = {
+      ...authSession.value,
+      user: {
+        ...authSession.value.user,
+        name,
+      },
+    }
+    localStorage.setItem(authSessionKey, JSON.stringify(authSession.value))
+  }
 
   showEditDialog.value = false
 
@@ -221,8 +236,10 @@ const saveProfile = () => {
 }
 
 const logout = () => {
-  localStorage.setItem('authMode', 'guest')
-  authMode.value = 'guest'
+  localStorage.removeItem('authToken')
+  localStorage.removeItem(authSessionKey)
+  authSession.value = null
+  user.value = { name: 'Guest' }
   router.push('/login')
 }
 
