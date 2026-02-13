@@ -395,4 +395,67 @@ const addUser = () => {
     message: 'User added',
   })
 }
+
+// --- Notify when permissions change (debounced) ---
+let permToastTimer = null
+let prevPermSnapshot = new Map()
+
+// build a snapshot we can compare later (by email)
+const snapshotPerms = (list) => {
+  const m = new Map()
+  for (const u of list) {
+    m.set(u.email, {
+      canEdit: !!u.canEdit,
+      canValidate: !!u.canValidate,
+      canPublish: !!u.canPublish,
+    })
+  }
+  return m
+}
+
+// initialize snapshot once users are loaded (first change will come after load)
+watch(
+  users,
+  (val) => {
+    // Always persist changes (your existing behavior)
+    saveUsers(val)
+
+    // If it's the very first time or we don't have a baseline yet, set it and stop
+    if (prevPermSnapshot.size === 0) {
+      prevPermSnapshot = snapshotPerms(val)
+      return
+    }
+
+    // Detect if any permission changed
+    let changed = false
+    for (const u of val) {
+      const prev = prevPermSnapshot.get(u.email)
+      if (!prev) continue
+      if (
+        prev.canEdit !== !!u.canEdit ||
+        prev.canValidate !== !!u.canValidate ||
+        prev.canPublish !== !!u.canPublish
+      ) {
+        changed = true
+        break
+      }
+    }
+
+    // Update snapshot for next comparison
+    prevPermSnapshot = snapshotPerms(val)
+
+    if (!changed) return
+
+    // Debounce notifications so you don't get spammed on rapid clicks
+    if (permToastTimer) clearTimeout(permToastTimer)
+    permToastTimer = setTimeout(() => {
+      $q.notify({
+        message: 'Permissions updated',
+        color: 'positive',
+      })
+    }, 250)
+  },
+  { deep: true }
+)
+
 </script>
