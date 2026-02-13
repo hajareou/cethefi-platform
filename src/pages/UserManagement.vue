@@ -95,27 +95,41 @@
           </template>
 
           <!-- Custom cell: Delete and Edit action button -->
-          <template v-slot:body-cell-action="props">
+           <template v-slot:body-cell-action="props">
             <q-td :props="props" class="text-center">
               <q-btn
                 flat
                 round
                 dense
+                icon="more_vert"
                 color="grey-8"
-                icon="edit"
-                size="sm"
-                class="q-mr-xs"
-                @click="openEditUser(props.row)"
-              />
-              <q-btn
-                flat
-                round
-                dense
-                color="grey-8"
-                icon="delete_outline"
-                size="sm"
-                @click="confirmDelete(props.row)"
-              />
+              >
+                <q-menu>
+                  <q-list style="min-width: 160px">
+
+                    <!-- Edit -->
+                    <q-item clickable v-close-popup @click="openEditUser(props.row)">
+                      <q-item-section avatar>
+                        <q-icon name="edit" />
+                      </q-item-section>
+                      <q-item-section>Edit</q-item-section>
+                    </q-item>
+
+                    <q-separator />
+
+                    <!-- Delete -->
+                    <q-item clickable v-close-popup @click="confirmDelete(props.row)">
+                      <q-item-section avatar>
+                        <q-icon name="delete" color="negative" />
+                      </q-item-section>
+                      <q-item-section class="text-negative">
+                        Delete
+                      </q-item-section>
+                    </q-item>
+
+                  </q-list>
+                </q-menu>
+              </q-btn>
             </q-td>
           </template>
         </q-table>
