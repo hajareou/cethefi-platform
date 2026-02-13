@@ -28,7 +28,8 @@
         <q-btn v-else flat no-caps class="q-ml-md" padding="none">
           <div class="row items-center no-wrap">
             <q-avatar color="indigo-9" text-color="white" size="40px" font-size="16px">
-              {{ initials }}
+              <img v-if="avatarUrl" :src="avatarUrl" alt="User avatar" />
+              <span v-else>{{ initials }}</span>
             </q-avatar>
 
             <div class="q-ml-sm text-right gt-xs line-height-tight">
@@ -192,6 +193,8 @@ const user = ref(
     name: 'Guest',
   },
 )
+
+const avatarUrl = computed(() => user.value?.avatarUrl || null)
 
 // Avatar initials derived from the name (so we don't store initials anymore)
 const initials = computed(() => {
