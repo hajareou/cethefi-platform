@@ -414,8 +414,12 @@ import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/git
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 
-const authMode = ref(localStorage.getItem('authMode') || 'guest')
-const isGuest = computed(() => authMode.value === 'guest')
+const authSession = ref(JSON.parse(localStorage.getItem('authSession') || 'null'))
+const isGuest = computed(() => {
+  if (!authSession.value) return true
+  if (authSession.value.type === 'guest') return true
+  return authSession.value?.user?.role === 'guest'
+})
 
 const router = useRouter()
 
