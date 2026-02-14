@@ -11,12 +11,15 @@ export default defineConfig((/* ctx */) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: [],
+    // boot: [],
+    // Register axios boot file to set up API client and interceptors
+    boot: ['axios'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
+    // import icon libraries or other extras like Roboto font or Material Icons
     extras: [
       // 'ionicons-v4',
       // 'mdi-v7',
@@ -73,6 +76,8 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       // https: true,
+      host: '0.0.0.0',
+      port: 9090,
       open: true, // opens browser window automatically
     },
 
