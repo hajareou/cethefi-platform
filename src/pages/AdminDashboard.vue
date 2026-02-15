@@ -74,7 +74,7 @@
 
           <div class="row q-gutter-sm">
             <q-btn
-              v-if="!isGuest"
+              v-if="!isGuest && canEdit"
               outline
               no-caps
               :icon="githubIcon"
@@ -83,7 +83,7 @@
               @click="fetchGithubData"
             />
             <q-btn
-              v-if="!isGuest"
+              v-if="!isGuest && canEdit"
               unelevated
               no-caps
               icon="add"
@@ -151,7 +151,7 @@
                   <q-list style="min-width: 200px">
                     <!-- DRAFT -->
                     <q-item
-                      v-if="props.row.status === STATUS.DRAFT"
+                      v-if="props.row.status === STATUS.DRAFT && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -163,7 +163,7 @@
                     </q-item>
 
                     <q-item
-                      v-if="props.row.status === STATUS.DRAFT"
+                      v-if="props.row.status === STATUS.DRAFT && canEdit"
                       clickable
                       v-close-popup
                       @click="submitForReview(props.row)"
@@ -176,7 +176,7 @@
 
                     <!-- SUBMITTED FOR REVIEW -->
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
                       clickable
                       v-close-popup
                       @click="approveToReviewed(props.row)"
@@ -188,7 +188,7 @@
                     </q-item>
 
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
                       clickable
                       v-close-popup
                       @click="rejectToDraft(props.row)"
@@ -199,7 +199,7 @@
                       <q-item-section>Reject</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -211,7 +211,7 @@
                     </q-item>
                     <!-- REVIEWED -->
                     <q-item
-                      v-if="props.row.status === STATUS.REVIEWED"
+                      v-if="props.row.status === STATUS.REVIEWED && canPublish"
                       clickable
                       v-close-popup
                       @click="publishDocument(props.row)"
@@ -222,7 +222,7 @@
                       <q-item-section>Publish</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="props.row.status === STATUS.REVIEWED"
+                      v-if="props.row.status === STATUS.REVIEWED && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -235,7 +235,7 @@
 
                     <!-- PUBLISHED -->
                     <q-item
-                      v-if="props.row.status === STATUS.PUBLISHED"
+                      v-if="props.row.status === STATUS.PUBLISHED && canPublish"
                       clickable
                       v-close-popup
                       @click="unpublishDocument(props.row)"
@@ -246,10 +246,10 @@
                       <q-item-section>Unpublish</q-item-section>
                     </q-item>
 
-                    <q-separator />
+                    <q-separator v-if="canEdit" />
 
-                    <!-- DELETE (always available) -->
-                    <q-item clickable v-close-popup @click="confirmDeleteDocument(props.row)">
+                    <!-- DELETE -->
+                    <q-item v-if="canEdit" clickable v-close-popup @click="confirmDeleteDocument(props.row)">
                       <q-item-section avatar>
                         <q-icon name="delete" color="negative" />
                       </q-item-section>
@@ -311,7 +311,7 @@
                 <div class="row q-gutter-sm">
                   <!-- DRAFT -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
                     no-caps
                     icon="send"
@@ -320,7 +320,7 @@
                     @click="submitForReview(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -331,7 +331,7 @@
 
                   <!-- SUBMITTED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
                     no-caps
                     icon="task_alt"
@@ -340,7 +340,7 @@
                     @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
                     no-caps
                     icon="undo"
@@ -349,7 +349,7 @@
                     @click="rejectToDraft(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -360,7 +360,7 @@
 
                   <!-- REVIEWED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
                     unelevated
                     no-caps
                     icon="publish"
@@ -369,7 +369,7 @@
                     @click="publishDocument(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -380,7 +380,7 @@
 
                   <!-- PUBLISHED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.PUBLISHED"
+                    v-if="selectedDoc?.status === STATUS.PUBLISHED && canPublish"
                     outline
                     no-caps
                     icon="visibility_off"
@@ -392,6 +392,7 @@
 
                 <!-- Right side: delete -->
                 <q-btn
+                  v-if="canEdit"
                   flat
                   no-caps
                   icon="delete"
@@ -420,6 +421,17 @@ const isGuest = computed(() => {
   if (authSession.value.type === 'guest') return true
   return authSession.value?.user?.role === 'guest'
 })
+const grantedPermissions = computed(() =>
+  Array.isArray(authSession.value?.permissions) ? authSession.value.permissions : [],
+)
+const hasPermission = (permission) =>
+  grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)
+const canEdit = computed(() => !isGuest.value && hasPermission('documents:edit'))
+const canValidate = computed(() => !isGuest.value && hasPermission('documents:validate'))
+const canPublish = computed(() => !isGuest.value && hasPermission('documents:publish'))
+const canUseActions = computed(
+  () => !isGuest.value && (canEdit.value || canValidate.value || canPublish.value),
+)
 
 const router = useRouter()
 
@@ -518,7 +530,7 @@ const actionColumn = {
 }
 
 const columns = computed(() => {
-  return isGuest.value ? baseColumns : [...baseColumns, actionColumn]
+  return canUseActions.value ? [...baseColumns, actionColumn] : baseColumns
 })
 
 /*
@@ -647,30 +659,35 @@ onMounted(() => {
   - closes menu
 */
 const submitForReview = (doc) => {
+  if (!canEdit.value) return
   doc.status = STATUS.SUBMITTED
   saveDocOverride(doc)
   closeMenu()
 }
 
 const rejectToDraft = (doc) => {
+  if (!canValidate.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
 }
 
 const approveToReviewed = (doc) => {
+  if (!canValidate.value) return
   doc.status = STATUS.REVIEWED
   saveDocOverride(doc)
   closeMenu()
 }
 
 const publishDocument = (doc) => {
+  if (!canPublish.value) return
   doc.status = STATUS.PUBLISHED
   saveDocOverride(doc)
   closeMenu()
 }
 
 const unpublishDocument = (doc) => {
+  if (!canPublish.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
@@ -687,6 +704,7 @@ const closeDocViewer = () => {
 }
 
 const editDocument = (doc) => {
+  if (!canEdit.value) return
   if (!doc?._path) {
     $q.notify({ color: 'negative', message: 'No file path available for this document' })
     return
