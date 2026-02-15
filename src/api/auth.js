@@ -30,7 +30,8 @@ export const authApi = {
    * @param {string} frontendRedirectUrl - URL to redirect after successful auth
    */
   startGithubLogin(frontendRedirectUrl) {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8091'
+    // const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8091'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.196.89:8091'
     const url = `${baseUrl}/api/auth/github/start?frontendRedirectUrl=${encodeURIComponent(frontendRedirectUrl)}`
     window.location.href = url
   },
