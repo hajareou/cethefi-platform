@@ -87,7 +87,7 @@
           </q-item>
 
           <q-item
-            v-if="!isGuest"
+            v-if="!isGuest && canManageUsers"
             clickable
             v-ripple
             to="/users"
@@ -182,6 +182,12 @@ const isGuest = computed(() => {
   if (authSession.value.type === 'guest') return true
   return authSession.value?.user?.role === 'guest'
 })
+const grantedPermissions = computed(() =>
+  Array.isArray(authSession.value?.permissions) ? authSession.value.permissions : [],
+)
+const hasPermission = (permission) =>
+  grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)
+const canManageUsers = computed(() => !isGuest.value && hasPermission('users:manage'))
 
 const leftDrawerOpen = ref(false)
 function toggleLeftDrawer() {

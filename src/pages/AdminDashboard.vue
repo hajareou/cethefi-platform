@@ -246,10 +246,15 @@
                       <q-item-section>Unpublish</q-item-section>
                     </q-item>
 
-                    <q-separator v-if="canEdit" />
+                    <q-separator v-if="canPublish" />
 
                     <!-- DELETE -->
-                    <q-item v-if="canEdit" clickable v-close-popup @click="confirmDeleteDocument(props.row)">
+                    <q-item
+                      v-if="canPublish"
+                      clickable
+                      v-close-popup
+                      @click="confirmDeleteDocument(props.row)"
+                    >
                       <q-item-section avatar>
                         <q-icon name="delete" color="negative" />
                       </q-item-section>
@@ -392,7 +397,7 @@
 
                 <!-- Right side: delete -->
                 <q-btn
-                  v-if="canEdit"
+                  v-if="canPublish"
                   flat
                   no-caps
                   icon="delete"
@@ -736,6 +741,7 @@ const editDocument = (doc) => {
 }
 
 const confirmDeleteDocument = (doc) => {
+  if (!canPublish.value) return
   $q.dialog({
     title: 'Confirm deletion',
     message: `Are you sure you want to delete "${doc.title}"?`,
