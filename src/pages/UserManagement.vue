@@ -221,8 +221,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave } from 'vue-router'
 
-// We load initial users from /public/data/users.json, but we also persist edits to localStorage.
-// storage.js handles: loadUsers (JSON + localStorage fallback) and saveUsers (localStorage write).
+// Users are loaded/saved through backend API routes.
 import { loadUsers, saveUsers } from 'src/services/storage'
 
 /**
@@ -328,13 +327,12 @@ const users = ref([])
 const loading = ref(false)
 
 /**
- * Load users when the page is mounted.
- * loadUsers() reads from localStorage first (if present), otherwise from /data/users.json.
+ * Load users when the page is mounted from backend API.
  */
 onMounted(async () => {
   loading.value = true
   try {
-    users.value = await loadUsers('/data/users.json')
+    users.value = await loadUsers()
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
   } finally {
@@ -343,15 +341,19 @@ onMounted(async () => {
 })
 
 /**
- * Auto-save users to localStorage any time the list changes:
- * - checkbox toggles update permissions
- * - adding/removing users updates the array
+ * Persist users to backend API with debounce to avoid request bursts.
  */
-watch(
-  users,
-  (val) => saveUsers(val),
-  { deep: true }
-)
+let saveTimer = null
+const persistUsers = (val) => {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(async () => {
+    try {
+      await saveUsers(val)
+    } catch (e) {
+      $q.notify({ color: 'negative', message: e?.message || 'Failed to save users' })
+    }
+  }, 250)
+}
 
 /**
  * ===== Delete flow =====
@@ -526,8 +528,7 @@ const snapshotPerms = (list) => {
 watch(
   users,
   (val) => {
-    // Always persist changes (your existing behavior)
-    saveUsers(val)
+    persistUsers(val)
 
     // If it's the very first time or we don't have a baseline yet, set it and stop
     if (prevPermSnapshot.size === 0) {
