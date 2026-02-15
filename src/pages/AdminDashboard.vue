@@ -419,15 +419,12 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
 
-const authSession = ref(JSON.parse(localStorage.getItem('authSession') || 'null'))
-const isGuest = computed(() => {
-  if (!authSession.value) return true
-  if (authSession.value.type === 'guest') return true
-  return authSession.value?.user?.role === 'guest'
-})
+const authStore = useAuthStore()
+const isGuest = computed(() => authStore.isGuest)
 const grantedPermissions = computed(() =>
-  Array.isArray(authSession.value?.permissions) ? authSession.value.permissions : [],
+  Array.isArray(authStore.permissions) ? authStore.permissions : [],
 )
 const hasPermission = (permission) =>
   grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)

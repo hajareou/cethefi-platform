@@ -160,30 +160,15 @@
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
 const $q = useQuasar()
+const authStore = useAuthStore()
 
-const authSessionKey = 'authSession'
-
-const getStoredSession = () => {
-  const raw = localStorage.getItem(authSessionKey)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
-}
-
-const authSession = ref(getStoredSession())
-const isGuest = computed(() => {
-  if (!authSession.value) return true
-  if (authSession.value.type === 'guest') return true
-  return authSession.value?.user?.role === 'guest'
-})
+const isGuest = computed(() => authStore.isGuest)
 const grantedPermissions = computed(() =>
-  Array.isArray(authSession.value?.permissions) ? authSession.value.permissions : [],
+  Array.isArray(authStore.permissions) ? authStore.permissions : [],
 )
 const hasPermission = (permission) =>
   grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)
@@ -194,11 +179,7 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-const user = ref(
-  authSession.value?.user || {
-    name: 'Guest',
-  },
-)
+const user = computed(() => authStore.user)
 
 const avatarUrl = computed(() => user.value?.avatarUrl || null)
 
@@ -226,18 +207,7 @@ const saveProfile = () => {
     return
   }
 
-  user.value.name = name
-
-  if (authSession.value) {
-    authSession.value = {
-      ...authSession.value,
-      user: {
-        ...authSession.value.user,
-        name,
-      },
-    }
-    localStorage.setItem(authSessionKey, JSON.stringify(authSession.value))
-  }
+  authStore.updateUser({ name })
 
   showEditDialog.value = false
 
@@ -245,10 +215,7 @@ const saveProfile = () => {
 }
 
 const logout = () => {
-  localStorage.removeItem('authToken')
-  localStorage.removeItem(authSessionKey)
-  authSession.value = null
-  user.value = { name: 'Guest' }
+  authStore.clearSession()
   router.push('/login')
 }
 
