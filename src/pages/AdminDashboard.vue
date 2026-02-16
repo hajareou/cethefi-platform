@@ -575,6 +575,30 @@ const getStatusColor = (status) => {
   return { bg: 'grey-2', text: 'grey-8' }
 }
 
+// Extract "main" title + author from a TEI XML string
+const extractTeiMeta = (xmlText) => {
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
+    if (doc.getElementsByTagName('parsererror').length) return null
+
+    const titleEl =
+      doc.querySelector('teiHeader titleStmt title[type="main"]') ||
+      doc.querySelector('teiHeader titleStmt title')
+
+    const authorEl =
+      doc.querySelector('teiHeader titleStmt author persName') ||
+      doc.querySelector('teiHeader titleStmt author name') ||
+      doc.querySelector('teiHeader titleStmt author')
+
+    return {
+      title: titleEl?.textContent?.trim() || null,
+      author: authorEl?.textContent?.trim() || null,
+    }
+  } catch {
+    return null
+  }
+}
+
 /*
   Loads documents from GitHub index.json
   Then:
@@ -617,14 +641,37 @@ async function fetchGithubData() {
 
     rows.value = flat
 
-    // Fetch commit metadata
+    // Fetch commit metadata + TEI metadata
     for (const row of rows.value) {
       if (!row._path) continue
+
+      // --- Commit metadata (your existing logic) ---
       const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const author = commitData?.commit?.author?.name ?? null
+      const commitAuthor = commitData?.commit?.author?.name ?? null
       const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.author || row.author === '-') row.author = author ?? '-'
+      if (!row.author || row.author === '-') row.author = commitAuthor ?? '-'
       if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
+
+      // --- TEI metadata (NEW) ---
+      try {
+        const xmlText = await getRepoFileText({
+          owner,
+          repo,
+          path: row._path,
+          ref: 'main',
+        })
+
+        const meta = extractTeiMeta(xmlText)
+
+        // Override filename-based title with TEI title
+        if (meta?.title) row.title = meta.title
+
+        // Override commit author with TEI author (if present)
+        if (meta?.author) row.author = meta.author
+      } catch (e) {
+        // If TEI fetch/parse fails, keep existing values
+        console.warn('Failed to read TEI meta for', row._path, e)
+      }
     }
 
     rows.value = [...rows.value]
