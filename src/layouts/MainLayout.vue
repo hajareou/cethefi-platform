@@ -58,6 +58,11 @@
           </q-menu>
         </q-btn>
       </q-toolbar>
+      <!-- Decorative bar -->
+      <div class="header-color-bar">
+        <div class="bar bar-top"></div>
+        <div class="bar bar-bottom"></div>
+      </div>
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above class="bg-white" :width="260">
@@ -237,5 +242,24 @@ const goToLogin = () => {
 
 :deep(.q-field--rounded .q-field__control) {
   border-radius: 8px;
+}
+
+.header-color-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.bar {
+  height: 2px;
+  width: 100%;
+}
+
+.bar-top {
+  background: #0057B7;
+}
+
+.bar-bottom {
+  background: #FFD700;
 }
 </style>
