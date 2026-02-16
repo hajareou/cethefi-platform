@@ -484,6 +484,7 @@ const baseColumns = [
     label: 'Document Title',
     field: 'title',
     sortable: true,
+    classes: 'cell-wrap',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -492,6 +493,7 @@ const baseColumns = [
     label: 'Author',
     field: 'author',
     sortable: true,
+    classes: 'cell-wrap',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -500,7 +502,6 @@ const baseColumns = [
     field: 'year',
     sortable: true,
     align: 'center',
-    sort: (a, b) => a - b,
   },
   {
     name: 'last_modified',
