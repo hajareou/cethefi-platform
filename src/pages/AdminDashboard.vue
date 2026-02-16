@@ -283,7 +283,7 @@
 
               <q-scroll-area style="height: 70vh">
                 <div class="q-pa-md">
-                  <pre style="white-space: pre-wrap; margin: 0">{{ docText }}</pre>
+                  <div ref="teiContainer" class="tei-container"></div>
                 </div>
               </q-scroll-area>
             </q-card-section>
@@ -409,10 +409,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import CETEI from 'CETEIcean'
+
 
 const authSession = ref(JSON.parse(localStorage.getItem('authSession') || 'null'))
 const isGuest = computed(() => {
@@ -831,6 +833,12 @@ const selectedDoc = ref(null)
 const docText = ref('')
 const docLoading = ref(false)
 
+// Inject formatted TEI HTML
+const teiContainer = ref(null)
+
+// Create one CETEI instance
+const cetei = new CETEI()
+
 const openDocViewer = async (doc) => {
   if (!doc?._path) {
     $q.notify({ color: 'negative', message: 'No file path available for this document' })
@@ -843,12 +851,23 @@ const openDocViewer = async (doc) => {
   docLoading.value = true
 
   try {
+    // 1) fetch raw TEI XML
     docText.value = await getRepoFileText({
       owner,
       repo,
       path: doc._path,
       ref: 'main',
     })
+
+    // 2) wait for dialog DOM to exist
+    await nextTick()
+
+    // 3) clear previous render
+    if (teiContainer.value) teiContainer.value.innerHTML = ''
+
+    // 4) render TEI -> HTML and append to container
+    const dom = await cetei.makeHTML5(docText.value)
+    if (teiContainer.value) teiContainer.value.appendChild(dom)
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load document' })
   } finally {
