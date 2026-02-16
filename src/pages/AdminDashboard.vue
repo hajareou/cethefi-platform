@@ -32,9 +32,9 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Waiting for review</div>
+              <div class="text-caption text-grey-7 text-weight-medium">Submitted for review</div>
               <div class="text-h4 text-weight-bolder text-grey-9">
-                {{ counters.waiting }}
+                {{ counters.submitted }}
               </div>
             </div>
           </q-card-section>
@@ -526,15 +526,15 @@ const columns = computed(() => {
 /*
   Dashboard counters:
   - total: all documents
-  - waiting: submitted for review
+  - submitted: submitted for review
   - published: published documents
 */
 const counters = computed(() => {
   const total = rows.value.length
-  const waiting = rows.value.filter((r) => r.status === STATUS.SUBMITTED).length
+  const submitted = rows.value.filter((r) => r.status === STATUS.SUBMITTED).length
   const published = rows.value.filter((r) => r.status === STATUS.PUBLISHED).length
 
-  return { total, waiting, published }
+  return { total, submitted, published }
 })
 
 /*
