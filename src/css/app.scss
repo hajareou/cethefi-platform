@@ -3,29 +3,135 @@
   opacity: 1 !important;
 }
 
-
 .tei-container {
   line-height: 1.6;
   font-size: 15px;
 }
 
+/* ===== Headings / structure ===== */
 tei-head {
   display: block;
-  font-weight: 700;
-  font-size: 18px;
+  font-weight: 800;
   margin: 14px 0 8px;
 }
 
+/* Act / scene titles */
+tei-div[type="act"] > tei-head,
+tei-div[type="scene"] > tei-head {
+  text-align: center;
+  font-size: 2rem;
+  margin-top: 40px;
+  letter-spacing: .02em;
+}
+
+/* Main title in teiHeader (if rendered) */
+tei-titlestmt tei-title[type="main"] {
+  display: block;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: .02em;
+  margin: 18px 0 8px;
+  font-size: 2rem;
+}
+
+/* ===== Basic blocks ===== */
 tei-p {
   display: block;
   margin: 8px 0;
 }
 
+tei-sp {
+  display: block;
+  margin: 14px 0;
+}
+
 tei-speaker {
+  display: block;
+  text-align: center;
   font-weight: 700;
+  font-variant: small-caps;
+  margin: 18px 0 10px;
 }
 
 tei-stage {
+  display: block;
+  text-align: center;
   font-style: italic;
-  opacity: 0.85;
+  opacity: 0.9;
+  margin: 10px 0;
 }
+
+/* ===== Cast / characters ===== */
+tei-listperson {
+  display: block;
+  margin: 28px auto;
+  max-width: 520px;
+  padding-left: 0; /* no bullets by default */
+}
+
+tei-castlist {
+  padding-left: 0;
+}
+
+tei-castitem {
+  display: list-item;
+  list-style: none; /* set to 'disc' if you want bullets */
+}
+
+tei-person {
+  display: block;
+  margin: 6px 0;
+}
+
+tei-role,
+tei-persname {
+  font-weight: 700;
+}
+
+tei-roledesc {
+  font-style: italic;
+  margin-left: 6px;
+}
+
+/* ===== Verse ===== */
+tei-lg {
+  display: block;
+  margin: 12px 0;
+}
+
+tei-l {
+  display: block;
+  text-align: center;
+}
+
+/* ===== Page breaks ===== */
+tei-pb {
+  display: block;
+  text-align: right;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  margin: 12px 0;
+}
+
+tei-pb::after {
+  content: "p. " attr(n);
+}
+
+/* ===== Source line ===== */
+tei-bibl[type="originalSource"] {
+  display: block;
+  text-align: center;
+  font-style: italic;
+  margin-top: 6px;
+}
+
+tei-bibl[type="originalSource"]::before {
+  content: "Source: ";
+  font-style: normal;
+}
+
+.q-table td {
+  white-space: normal !important;
+  word-break: bre;
+}
+
