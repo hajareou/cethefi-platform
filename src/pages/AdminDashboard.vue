@@ -209,6 +209,7 @@
                       </q-item-section>
                       <q-item-section>Edit</q-item-section>
                     </q-item>
+                    
                     <!-- REVIEWED -->
                     <q-item
                       v-if="props.row.status === STATUS.REVIEWED"
@@ -343,19 +344,19 @@
                     v-if="selectedDoc?.status === STATUS.SUBMITTED"
                     outline
                     no-caps
-                    icon="undo"
-                    label="Reject"
+                    icon="edit"
+                    label="Edit"
                     color="grey-8"
-                    @click="rejectToDraft(selectedDoc)"
+                    @click="editDocument(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED"
                     outline
                     no-caps
-                    icon="edit"
-                    label="Edit"
-                    color="grey-8"
-                    @click="editDocument(selectedDoc)"
+                    icon="undo"
+                    label="Reject"
+                    color="warning"
+                    @click="rejectToDraft(selectedDoc)"
                   />
 
                   <!-- REVIEWED -->
@@ -700,30 +701,72 @@ const submitForReview = (doc) => {
   doc.status = STATUS.SUBMITTED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'info',
+    message: 'Submitted for review',
+    icon: 'send'
+  })
 }
 
 const rejectToDraft = (doc) => {
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'warning',
+    message: 'Rejected. Sent back to draft',
+    icon: 'undo'
+  })
 }
 
 const approveToReviewed = (doc) => {
   doc.status = STATUS.REVIEWED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'positive',
+    message: 'Document approved',
+    icon: 'send'
+  })
 }
 
 const publishDocument = (doc) => {
   doc.status = STATUS.PUBLISHED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'positive',
+    message: 'Document published',
+    icon: 'send'
+  })
 }
 
 const unpublishDocument = (doc) => {
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'warning',
+    message: 'Document unpublished',
+    icon: 'undo'
+  })
+}
+
+
+/*
+  Clean notifications before shoving new
+*/
+
+let currentNotify = null
+
+const showNotify = (opts) => {
+  // If a notification is already visible, close it
+  if (currentNotify) {
+    currentNotify()
+  }
+
+  // Show new notification and store its dismiss function
+  currentNotify = $q.notify(opts)
 }
 
 /*
