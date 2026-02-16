@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
+    "pinia": "^3.0.4",
     "CETEIcean": "^1.9.5",
     "quasar": "^2.16.0",
     "vue": "^3.5.22",

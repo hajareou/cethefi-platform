@@ -1,7 +1,9 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
 const router = useRouter()
+const authStore = useAuthStore()
 const API = import.meta.env.VITE_AUTH_API_BASE_URL
 
 onMounted(async () => {
@@ -16,8 +18,10 @@ onMounted(async () => {
   if (!me.ok) return router.replace('/login')
 
   const profile = await me.json()
-  localStorage.setItem('authToken', token)
-  localStorage.setItem('authSession', JSON.stringify(profile))
+  authStore.setSession({
+    token,
+    session: profile,
+  })
   router.replace('/dashboard')
 })
 </script>

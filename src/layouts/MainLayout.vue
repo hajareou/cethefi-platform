@@ -92,7 +92,7 @@
           </q-item>
 
           <q-item
-            v-if="!isGuest"
+            v-if="!isGuest && canManageUsers"
             clickable
             v-ripple
             to="/users"
@@ -165,39 +165,27 @@
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
 const $q = useQuasar()
+const authStore = useAuthStore()
+const API = import.meta.env.VITE_AUTH_API_BASE_URL
 
-const authSessionKey = 'authSession'
-
-const getStoredSession = () => {
-  const raw = localStorage.getItem(authSessionKey)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
-}
-
-const authSession = ref(getStoredSession())
-const isGuest = computed(() => {
-  if (!authSession.value) return true
-  if (authSession.value.type === 'guest') return true
-  return authSession.value?.user?.role === 'guest'
-})
+const isGuest = computed(() => authStore.isGuest)
+const grantedPermissions = computed(() =>
+  Array.isArray(authStore.permissions) ? authStore.permissions : [],
+)
+const hasPermission = (permission) =>
+  grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)
+const canManageUsers = computed(() => !isGuest.value && hasPermission('users:manage'))
 
 const leftDrawerOpen = ref(false)
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-const user = ref(
-  authSession.value?.user || {
-    name: 'Guest',
-  },
-)
+const user = computed(() => authStore.user)
 
 const avatarUrl = computed(() => user.value?.avatarUrl || null)
 
@@ -225,30 +213,29 @@ const saveProfile = () => {
     return
   }
 
-  user.value.name = name
-
-  if (authSession.value) {
-    authSession.value = {
-      ...authSession.value,
-      user: {
-        ...authSession.value.user,
-        name,
-      },
-    }
-    localStorage.setItem(authSessionKey, JSON.stringify(authSession.value))
-  }
+  authStore.updateUser({ name })
 
   showEditDialog.value = false
 
   $q.notify({ color: 'positive', message: 'Profile updated' })
 }
 
-const logout = () => {
-  localStorage.removeItem('authToken')
-  localStorage.removeItem(authSessionKey)
-  authSession.value = null
-  user.value = { name: 'Guest' }
-  router.push('/login')
+const logout = async () => {
+  const token = authStore.authToken
+
+  try {
+    if (API) {
+      await fetch(`${API}/api/auth/logout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+    }
+  } catch {
+    // Ignore network/logout endpoint errors and always clear local session.
+  } finally {
+    authStore.clearSession()
+    router.push('/login')
+  }
 }
 
 const goToLogin = () => {
