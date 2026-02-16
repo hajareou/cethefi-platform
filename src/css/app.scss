@@ -2,3 +2,30 @@
 .q-th--sortable .q-table__sort-icon {
   opacity: 1 !important;
 }
+
+
+.tei-container {
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+tei-head {
+  display: block;
+  font-weight: 700;
+  font-size: 18px;
+  margin: 14px 0 8px;
+}
+
+tei-p {
+  display: block;
+  margin: 8px 0;
+}
+
+tei-speaker {
+  font-weight: 700;
+}
+
+tei-stage {
+  font-style: italic;
+  opacity: 0.85;
+}
