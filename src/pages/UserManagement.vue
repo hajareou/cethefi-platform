@@ -325,6 +325,7 @@ const columns = [
  */
 const users = ref([])
 const loading = ref(false)
+const hasLoadedUsers = ref(false)
 
 /**
  * Load users when the page is mounted from backend API.
@@ -333,6 +334,7 @@ onMounted(async () => {
   loading.value = true
   try {
     users.value = await loadUsers()
+    hasLoadedUsers.value = true
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
   } finally {
@@ -528,6 +530,7 @@ const snapshotPerms = (list) => {
 watch(
   users,
   (val) => {
+    if (!hasLoadedUsers.value) return
     persistUsers(val)
 
     // If it's the very first time or we don't have a baseline yet, set it and stop

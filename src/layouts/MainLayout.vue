@@ -170,6 +170,7 @@ import { useAuthStore } from 'src/stores/auth'
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
+const API = import.meta.env.VITE_AUTH_API_BASE_URL
 
 const isGuest = computed(() => authStore.isGuest)
 const grantedPermissions = computed(() =>
@@ -219,9 +220,22 @@ const saveProfile = () => {
   $q.notify({ color: 'positive', message: 'Profile updated' })
 }
 
-const logout = () => {
-  authStore.clearSession()
-  router.push('/login')
+const logout = async () => {
+  const token = authStore.authToken
+
+  try {
+    if (API) {
+      await fetch(`${API}/api/auth/logout`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+    }
+  } catch {
+    // Ignore network/logout endpoint errors and always clear local session.
+  } finally {
+    authStore.clearSession()
+    router.push('/login')
+  }
 }
 
 const goToLogin = () => {
