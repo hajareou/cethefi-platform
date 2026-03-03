@@ -346,7 +346,7 @@
                     @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -355,7 +355,7 @@
                     @click="editDocument(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
                     no-caps
                     icon="undo"
@@ -664,7 +664,7 @@ async function fetchGithubData() {
       const commitData = await getLastCommit({ owner, repo, path: row._path })
       const dateIso = commitData?.commit?.author?.date ?? null
       if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-      
+
       // --- TEI metadata (NEW) ---
       try {
         const xmlText = await getRepoFileText({
