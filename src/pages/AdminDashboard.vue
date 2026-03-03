@@ -660,13 +660,11 @@ async function fetchGithubData() {
     for (const row of rows.value) {
       if (!row._path) continue
 
-      // --- Commit metadata (your existing logic) ---
+      // --- Commit metadata  ---
       const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const commitAuthor = commitData?.commit?.author?.name ?? null
       const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.author || row.author === '-') row.author = commitAuthor ?? '-'
       if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-
+      
       // --- TEI metadata (NEW) ---
       try {
         const xmlText = await getRepoFileText({
@@ -678,11 +676,16 @@ async function fetchGithubData() {
 
         const meta = extractTeiMeta(xmlText)
 
-        // Override filename-based title with TEI title
-        if (meta?.title) row.title = meta.title
+        // Title
+        if (meta?.title) {
+          row.title = meta.title
+        }
 
-        // Override commit author with TEI author (if present)
-        if (meta?.author) row.author = meta.author
+        // Author: ONLY from TEI
+        row.author = meta?.author?.trim()
+          ? meta.author.trim()
+          : 'Unknown'
+
       } catch (e) {
         // If TEI fetch/parse fails, keep existing values
         console.warn('Failed to read TEI meta for', row._path, e)
