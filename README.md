@@ -42,7 +42,7 @@ quasar build
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
 
-# A repository containing sub - modules
+## A repository containing sub - modules
 
 When recloning this main repository on other devices, by default, there will only be empty directories for the sub - modules. You need to use the following commands to initialize and update the code of the sub - modules:
 
