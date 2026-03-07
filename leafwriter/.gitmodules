@@ -1,0 +1,3 @@
+[submodule "submodules/test-data"]
+	path = submodules/test-data
+	url = https://github.com/hajareou/leafwriter-test.git
