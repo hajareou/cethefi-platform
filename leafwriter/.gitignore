@@ -1,3 +1,15 @@
+#tem-----JJ
+node_modules/
+dist/
+.git/
+keycloak-data/
+submodules/
+.changeset/
+.gitlab/
+.husky/
+
+
+
 #root
 .DS_store
 notes.md
