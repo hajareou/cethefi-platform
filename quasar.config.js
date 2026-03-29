@@ -13,7 +13,7 @@ export default defineConfig((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     // boot: [],
     // Register axios boot file to set up API client and interceptors
-    boot: ['axios'],
+    boot: ['axios', 'pinia'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],

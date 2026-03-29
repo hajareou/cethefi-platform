@@ -32,9 +32,9 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Waiting for review</div>
+              <div class="text-caption text-grey-7 text-weight-medium">Submitted for review</div>
               <div class="text-h4 text-weight-bolder text-grey-9">
-                {{ counters.waiting }}
+                {{ counters.submitted }}
               </div>
             </div>
           </q-card-section>
@@ -74,7 +74,7 @@
 
           <div class="row q-gutter-sm">
             <q-btn
-              v-if="!isGuest"
+              v-if="!isGuest && canEdit"
               outline
               no-caps
               :icon="githubIcon"
@@ -83,7 +83,7 @@
               @click="fetchGithubData"
             />
             <q-btn
-              v-if="!isGuest"
+              v-if="!isGuest && canEdit"
               unelevated
               no-caps
               icon="add"
@@ -151,7 +151,7 @@
                   <q-list style="min-width: 200px">
                     <!-- DRAFT -->
                     <q-item
-                      v-if="props.row.status === STATUS.DRAFT"
+                      v-if="props.row.status === STATUS.DRAFT && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -163,7 +163,7 @@
                     </q-item>
 
                     <q-item
-                      v-if="props.row.status === STATUS.DRAFT"
+                      v-if="props.row.status === STATUS.DRAFT && canEdit"
                       clickable
                       v-close-popup
                       @click="submitForReview(props.row)"
@@ -176,7 +176,7 @@
 
                     <!-- SUBMITTED FOR REVIEW -->
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
                       clickable
                       v-close-popup
                       @click="approveToReviewed(props.row)"
@@ -188,7 +188,7 @@
                     </q-item>
 
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
                       clickable
                       v-close-popup
                       @click="rejectToDraft(props.row)"
@@ -199,7 +199,7 @@
                       <q-item-section>Reject</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED"
+                      v-if="props.row.status === STATUS.SUBMITTED && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -209,9 +209,10 @@
                       </q-item-section>
                       <q-item-section>Edit</q-item-section>
                     </q-item>
+
                     <!-- REVIEWED -->
                     <q-item
-                      v-if="props.row.status === STATUS.REVIEWED"
+                      v-if="props.row.status === STATUS.REVIEWED && canPublish"
                       clickable
                       v-close-popup
                       @click="publishDocument(props.row)"
@@ -222,7 +223,7 @@
                       <q-item-section>Publish</q-item-section>
                     </q-item>
                     <q-item
-                      v-if="props.row.status === STATUS.REVIEWED"
+                      v-if="props.row.status === STATUS.REVIEWED && canEdit"
                       clickable
                       v-close-popup
                       @click="editDocument(props.row)"
@@ -235,7 +236,7 @@
 
                     <!-- PUBLISHED -->
                     <q-item
-                      v-if="props.row.status === STATUS.PUBLISHED"
+                      v-if="props.row.status === STATUS.PUBLISHED && canPublish"
                       clickable
                       v-close-popup
                       @click="unpublishDocument(props.row)"
@@ -246,10 +247,15 @@
                       <q-item-section>Unpublish</q-item-section>
                     </q-item>
 
-                    <q-separator />
+                    <q-separator v-if="canPublish" />
 
-                    <!-- DELETE (always available) -->
-                    <q-item clickable v-close-popup @click="confirmDeleteDocument(props.row)">
+                    <!-- DELETE -->
+                    <q-item
+                      v-if="canPublish"
+                      clickable
+                      v-close-popup
+                      @click="confirmDeleteDocument(props.row)"
+                    >
                       <q-item-section avatar>
                         <q-icon name="delete" color="negative" />
                       </q-item-section>
@@ -283,7 +289,7 @@
 
               <q-scroll-area style="height: 70vh">
                 <div class="q-pa-md">
-                  <pre style="white-space: pre-wrap; margin: 0">{{ docText }}</pre>
+                  <div ref="teiContainer" class="tei-container"></div>
                 </div>
               </q-scroll-area>
             </q-card-section>
@@ -311,7 +317,7 @@
                 <div class="row q-gutter-sm">
                   <!-- DRAFT -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
                     no-caps
                     icon="send"
@@ -320,7 +326,7 @@
                     @click="submitForReview(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.DRAFT"
+                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -331,7 +337,7 @@
 
                   <!-- SUBMITTED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
                     no-caps
                     icon="task_alt"
@@ -340,16 +346,7 @@
                     @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
-                    outline
-                    no-caps
-                    icon="undo"
-                    label="Reject"
-                    color="grey-8"
-                    @click="rejectToDraft(selectedDoc)"
-                  />
-                  <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED"
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -357,10 +354,19 @@
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
+                    outline
+                    no-caps
+                    icon="undo"
+                    label="Reject"
+                    color="warning"
+                    @click="rejectToDraft(selectedDoc)"
+                  />
 
                   <!-- REVIEWED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
                     unelevated
                     no-caps
                     icon="publish"
@@ -369,7 +375,7 @@
                     @click="publishDocument(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED"
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canEdit"
                     outline
                     no-caps
                     icon="edit"
@@ -380,7 +386,7 @@
 
                   <!-- PUBLISHED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.PUBLISHED"
+                    v-if="selectedDoc?.status === STATUS.PUBLISHED && canPublish"
                     outline
                     no-caps
                     icon="visibility_off"
@@ -392,6 +398,7 @@
 
                 <!-- Right side: delete -->
                 <q-btn
+                  v-if="canPublish"
                   flat
                   no-caps
                   icon="delete"
@@ -409,17 +416,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
+import CETEI from 'CETEIcean'
 
-const authSession = ref(JSON.parse(localStorage.getItem('authSession') || 'null'))
-const isGuest = computed(() => {
-  if (!authSession.value) return true
-  if (authSession.value.type === 'guest') return true
-  return authSession.value?.user?.role === 'guest'
-})
+const authStore = useAuthStore()
+const isGuest = computed(() => authStore.isGuest)
+const grantedPermissions = computed(() =>
+  Array.isArray(authStore.permissions) ? authStore.permissions : [],
+)
+const hasPermission = (permission) =>
+  grantedPermissions.value.includes('*') || grantedPermissions.value.includes(permission)
+const canEdit = computed(() => !isGuest.value && hasPermission('documents:edit'))
+const canValidate = computed(() => !isGuest.value && hasPermission('documents:validate'))
+const canPublish = computed(() => !isGuest.value && hasPermission('documents:publish'))
+const canUseActions = computed(
+  () => !isGuest.value && (canEdit.value || canValidate.value || canPublish.value),
+)
 
 const router = useRouter()
 
@@ -482,6 +498,7 @@ const baseColumns = [
     label: 'Document Title',
     field: 'title',
     sortable: true,
+    classes: 'cell-wrap',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -490,6 +507,7 @@ const baseColumns = [
     label: 'Author',
     field: 'author',
     sortable: true,
+    classes: 'cell-wrap',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -498,7 +516,6 @@ const baseColumns = [
     field: 'year',
     sortable: true,
     align: 'center',
-    sort: (a, b) => a - b,
   },
   {
     name: 'last_modified',
@@ -518,21 +535,21 @@ const actionColumn = {
 }
 
 const columns = computed(() => {
-  return isGuest.value ? baseColumns : [...baseColumns, actionColumn]
+  return canUseActions.value ? [...baseColumns, actionColumn] : baseColumns
 })
 
 /*
   Dashboard counters:
   - total: all documents
-  - waiting: submitted for review
+  - submitted: submitted for review
   - published: published documents
 */
 const counters = computed(() => {
   const total = rows.value.length
-  const waiting = rows.value.filter((r) => r.status === STATUS.SUBMITTED).length
+  const submitted = rows.value.filter((r) => r.status === STATUS.SUBMITTED).length
   const published = rows.value.filter((r) => r.status === STATUS.PUBLISHED).length
 
-  return { total, waiting, published }
+  return { total, submitted, published }
 })
 
 /*
@@ -571,6 +588,30 @@ const getStatusColor = (status) => {
   if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
   if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
   return { bg: 'grey-2', text: 'grey-8' }
+}
+
+// Extract "main" title + author from a TEI XML string
+const extractTeiMeta = (xmlText) => {
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
+    if (doc.getElementsByTagName('parsererror').length) return null
+
+    const titleEl =
+      doc.querySelector('teiHeader titleStmt title[type="main"]') ||
+      doc.querySelector('teiHeader titleStmt title')
+
+    const authorEl =
+      doc.querySelector('teiHeader titleStmt author persName') ||
+      doc.querySelector('teiHeader titleStmt author name') ||
+      doc.querySelector('teiHeader titleStmt author')
+
+    return {
+      title: titleEl?.textContent?.trim() || null,
+      author: authorEl?.textContent?.trim() || null,
+    }
+  } catch {
+    return null
+  }
 }
 
 /*
@@ -615,14 +656,40 @@ async function fetchGithubData() {
 
     rows.value = flat
 
-    // Fetch commit metadata
+    // Fetch commit metadata + TEI metadata
     for (const row of rows.value) {
       if (!row._path) continue
+
+      // --- Commit metadata  ---
       const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const author = commitData?.commit?.author?.name ?? null
       const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.author || row.author === '-') row.author = author ?? '-'
       if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
+
+      // --- TEI metadata (NEW) ---
+      try {
+        const xmlText = await getRepoFileText({
+          owner,
+          repo,
+          path: row._path,
+          ref: 'main',
+        })
+
+        const meta = extractTeiMeta(xmlText)
+
+        // Title
+        if (meta?.title) {
+          row.title = meta.title
+        }
+
+        // Author: ONLY from TEI
+        row.author = meta?.author?.trim()
+          ? meta.author.trim()
+          : 'Unknown'
+
+      } catch (e) {
+        // If TEI fetch/parse fails, keep existing values
+        console.warn('Failed to read TEI meta for', row._path, e)
+      }
     }
 
     rows.value = [...rows.value]
@@ -647,33 +714,79 @@ onMounted(() => {
   - closes menu
 */
 const submitForReview = (doc) => {
+  if (!canEdit.value) return
   doc.status = STATUS.SUBMITTED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'info',
+    message: 'Submitted for review',
+    icon: 'send',
+  })
 }
 
 const rejectToDraft = (doc) => {
+  if (!canValidate.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'warning',
+    message: 'Rejected. Sent back to draft',
+    icon: 'undo',
+  })
 }
 
 const approveToReviewed = (doc) => {
+  if (!canValidate.value) return
   doc.status = STATUS.REVIEWED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'positive',
+    message: 'Document approved',
+    icon: 'send',
+  })
 }
 
 const publishDocument = (doc) => {
+  if (!canPublish.value) return
   doc.status = STATUS.PUBLISHED
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'positive',
+    message: 'Document published',
+    icon: 'send',
+  })
 }
 
 const unpublishDocument = (doc) => {
+  if (!canPublish.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
   closeMenu()
+  showNotify({
+    color: 'warning',
+    message: 'Document unpublished',
+    icon: 'undo',
+  })
+}
+
+/*
+  Clean notifications before shoving new
+*/
+
+let currentNotify = null
+
+const showNotify = (opts) => {
+  // If a notification is already visible, close it
+  if (currentNotify) {
+    currentNotify()
+  }
+
+  // Show new notification and store its dismiss function
+  currentNotify = $q.notify(opts)
 }
 
 /*
@@ -687,6 +800,7 @@ const closeDocViewer = () => {
 }
 
 const editDocument = (doc) => {
+  if (!canEdit.value) return
   if (!doc?._path) {
     $q.notify({ color: 'negative', message: 'No file path available for this document' })
     return
@@ -721,6 +835,7 @@ const editDocument = (doc) => {
 }
 
 const confirmDeleteDocument = (doc) => {
+  if (!canPublish.value) return
   $q.dialog({
     title: 'Confirm deletion',
     message: `Are you sure you want to delete "${doc.title}"?`,
@@ -834,6 +949,12 @@ const selectedDoc = ref(null)
 const docText = ref('')
 const docLoading = ref(false)
 
+// Inject formatted TEI HTML
+const teiContainer = ref(null)
+
+// Create one CETEI instance
+const cetei = new CETEI()
+
 const openDocViewer = async (doc) => {
   if (!doc?._path) {
     $q.notify({ color: 'negative', message: 'No file path available for this document' })
@@ -846,12 +967,23 @@ const openDocViewer = async (doc) => {
   docLoading.value = true
 
   try {
+    // 1) fetch raw TEI XML
     docText.value = await getRepoFileText({
       owner,
       repo,
       path: doc._path,
       ref: 'main',
     })
+
+    // 2) wait for dialog DOM to exist
+    await nextTick()
+
+    // 3) clear previous render
+    if (teiContainer.value) teiContainer.value.innerHTML = ''
+
+    // 4) render TEI -> HTML and append to container
+    const dom = await cetei.makeHTML5(docText.value)
+    if (teiContainer.value) teiContainer.value.appendChild(dom)
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load document' })
   } finally {
