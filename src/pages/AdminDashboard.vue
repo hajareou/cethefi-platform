@@ -711,6 +711,9 @@ const editDocument = (doc) => {
   })
   if (path) params.set('path', path)
 
+  const sessionToken = localStorage.getItem('authToken')
+  if (sessionToken) params.set('sessionToken', sessionToken)
+
   closeMenu()
   closeDocViewer()
 
