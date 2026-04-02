@@ -1,12 +1,5 @@
-import { contract } from '@lincs.project/auth-api-contract';
-import { Provider } from '@src/services';
-import { log } from '@src/utilities';
-import { initClient, type ClientInferResponseBody } from '@ts-rest/core';
+import type { Provider } from '@src/services';
 import axios from 'axios';
-import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
-import { logHttpError } from '../../services/utilities';
-
-//* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
 export interface HTTPRequestError {
   error: {
@@ -15,323 +8,215 @@ export interface HTTPRequestError {
   };
 }
 
-export type LinkedAccounts = ClientInferResponseBody<
-  typeof contract.v1.users.getLinkedAccounts,
-  200
->;
-export type LinkedAccount = LinkedAccounts[0];
-
-interface tokenParsed extends KeycloakTokenParsed {
-  identity_provider?: string;
-  given_name?: string;
-  family_name?: string;
-  email?: string;
-  preferred_username?: string;
+export interface LinkedAccount {
+  identityProvider?: string;
+  userId?: string;
+  userName?: string;
 }
 
-/* The Api class is a wrapper for the Keycloak object that provides a set of functions that are used to
-authenticate the user and get the user's profile data */
+export type LinkedAccounts = LinkedAccount[];
 
-const getLincsAuthApi = (baseUrl: string) => initClient(contract.v1, { baseUrl, baseHeaders: {} });
+const STORAGE_KEY = 'leafwriterSessionToken';
 
-export class Api {
-  readonly clientId: string;
-  readonly LINK_ACCOUNTS_CALLBACK_URL: string;
-  readonly realm: string;
-
-  private KEYCLOACK_BASE_URL!: string;
-  private AUTH_API_URL!: string;
-
-  private keycloak!: Keycloak;
+class Api {
+  private sessionToken: string | null = null;
+  private _userData: any = null;
+  private githubAccessToken: string | null = null;
+  private AUTH_API_BASE_URL = 'http://localhost:8091';
 
   /**
-   * The constructor function is called when the class is instantiated. It sets the realm, clientId,
-   * and LINK_ACCOUNTS_CALLBACK_URL variables
-   */
-  constructor() {
-    this.realm = 'lincs';
-    this.clientId = 'leaf-writer';
-
-    const { origin } = window.location;
-    this.LINK_ACCOUNTS_CALLBACK_URL = `${origin}/link-accounts`;
-  }
-
-  /**
-   * Setup the API
+   * Setup the API using the backend session (GitHub OAuth).
+   * Reads the session token from:
+   *   1. `?sessionToken=` URL param  — set by cethefi-platform when navigating to Leafwriter
+   *   2. `?token=`        URL param  — set by the backend OAuth callback on direct login
+   *   3. localStorage                — persisted from a previous visit
    */
   async setup() {
-    this.KEYCLOACK_BASE_URL = await this.getExternalServiceUrl('keycloak');
-    if (!this.KEYCLOACK_BASE_URL) throw log.error('Failed to configure KEYCLOACK_BASE_URL');
+    // Ask the Leafwriter server which backend URL to use
+    try {
+      const { data } = await axios.get<string>('./api/auth-api-url');
+      if (data) this.AUTH_API_BASE_URL = data.replace(/\/$/, '');
+    } catch {
+      // fall through – keep the default
+    }
 
-    this.AUTH_API_URL = await this.getExternalServiceUrl('auth-api');
-    if (!this.AUTH_API_URL) throw log.error('Failed to configure AUTH_API_URL');
+    // Extract token from URL params (clean up the URL afterwards)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('sessionToken') ?? urlParams.get('token');
 
-    this.keycloak = new Keycloak({
-      clientId: this.clientId,
-      realm: this.realm,
-      url: `${this.KEYCLOACK_BASE_URL}`,
-    });
+    if (urlToken) {
+      localStorage.setItem(STORAGE_KEY, urlToken);
+      this.sessionToken = urlToken;
+
+      urlParams.delete('sessionToken');
+      urlParams.delete('token');
+      urlParams.delete('provider');
+      urlParams.delete('expiresAt');
+      const clean =
+        window.location.pathname +
+        (urlParams.toString() ? '?' + urlParams.toString() : '') +
+        window.location.hash;
+      window.history.replaceState({}, '', clean);
+    } else {
+      this.sessionToken = localStorage.getItem(STORAGE_KEY);
+    }
+
+    // Validate the token against the backend
+    if (this.sessionToken) {
+      try {
+        const { data } = await axios.get(`${this.AUTH_API_BASE_URL}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${this.sessionToken}` },
+        });
+        this._userData = data;
+        this.githubAccessToken = data.githubAccessToken ?? null;
+      } catch {
+        // Token is invalid or expired – clear it
+        this.sessionToken = null;
+        this._userData = null;
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
   }
 
-  /**
-   * It initializes the keycloak object and returns a promise that resolves to true if the user is authenticated
-   * @returns A promise that resolves to a boolean.
-   */
+  /** Returns true if the user has a valid session. */
   async init() {
-   // const { origin } = window.location;
-
-    const sessionAuthenticated = await this.keycloak
-      .init({
-        onLoad: 'check-sso',
-        pkceMethod: 'S256',
-        //silentCheckSsoRedirectUri: `${origin}/silent-check-sso.html`,
-        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
-      })
-      .catch(() => log.error('Failed to contact keycloak'));
-
-    return sessionAuthenticated;
+    return !!this._userData;
   }
 
-  /**
-   * It makes an HTTP request to the server, and returns the URL of the external service
-   * @param {string} service - The name of the service you want to get the URL for.
-   * @returns The URL of the external service.
-   */
-  async getExternalServiceUrl(service: string) {
-    const { data } = await axios.get<string>(`./api/${service}-url`);
-    return data;
-  }
-
-  /**
-   * The login function will redirect the user to the Keycloak login page, and once the user is
-   * authenticated, the user will be redirected back to the application
-   * @returns The login method returns a promise that resolves to a boolean value.
-   */
-  async login(options?: { idpHint?: string }) {
-    return await this.keycloak.login({
-      ...options,
-      redirectUri: window.location.href,
-    });
-  }
-
-  /**
-   * It logs the user out of the application.
-   */
-  async logout() {
-    await this.keycloak.logout();
-  }
-
-  /**
-   * It returns the token from the keycloak object
-   * @returns The token.
-   */
+  /** Returns the session Bearer token. */
   async getToken() {
-    if (this.isTokenExpired()) await this.updateToken();
-    return this.keycloak.token;
+    return this.sessionToken;
   }
 
-  /**
-   * This function returns a boolean value that the user is logged in based on the presence of their token
-   * @returns A boolean value.
-   */
-  isLoggedIn() {
-    return !!this.keycloak.token;
-  }
-
-  /**
-   * This function returns a boolean value that indicates whether the token is expired or not
-   * @returns A boolean value.
-   */
-  isTokenExpired() {
-    return this.keycloak.isTokenExpired();
-  }
-
-  /**
-   * It updates the token, and if it fails, it clears the token and alerts the user
-   * @returns A promise that resolves to a boolean value.
-   */
-  async updateToken() {
-    return await this.keycloak.updateToken(5).catch(() => {
-      alert('Failed to refresh the token, or the session has expired');
-      this.keycloak.clearToken();
-    });
-  }
-
-  /**
-   * It returns the identity provider of the user that is currently logged in
-   * @returns The identity provider of the user.
-   */
+  /** Always returns 'github' since that is our only identity provider. */
   getIdentityProvider() {
-    const tokenParsed = this.keycloak.tokenParsed as tokenParsed;
-    return tokenParsed.identity_provider;
+    return this._userData ? 'github' : undefined;
   }
 
   /**
-   * It returns the user profile data from the Keycloak server
-   * @returns The user profile.
-   */
-  async getUserData() {
-    if (!this.keycloak.tokenParsed) return;
-    const userProfile = await this.keycloak.loadUserProfile();
-    return userProfile;
-  }
-
-  /**
-   * It returns true if the user has any of the roles passed in the array
-   * @param {string[]} roles - string[] - an array of roles that the user must have at least one of
-   * @returns A boolean value.
-   */
-  userHasRole(roles: string[]) {
-    return roles.some((role) => this.keycloak.hasRealmRole(role));
-  }
-
-  /**
-   * This function returns a boolean value that indicates whether the user has the specified role for
-   * the specified resource
-   * @param {string} role - The role you want to check for.
-   * @param {string} [resource] - The name of the resource.
-   * @returns A boolean value.
-   */
-  userHasResourceRole(role: string, resource?: string) {
-    return this.keycloak.hasResourceRole(role, resource);
-  }
-
-  /**
-   * It returns the account management URL.
-   * @returns The account management API.
-   */
-  accountManagement() {
-    return this.keycloak.accountManagement();
-  }
-
-  /**
-   * It takes a provider alias and a keycloak access code and returns the external Identity Provider (IDP) tokens
-   * @param {string} provider_alias - The alias of the external identity provider.
-   * @param {string} keycloakAccessCode - This is the access code that you get from the Keycloak server
-   * when you authenticate with the external IDP.
-   * @returns The access token for the external IDP.
+   * Returns the GitHub access token stored in the session.
+   * This replaces the Keycloak broker token exchange.
    */
   async getExternalIDPTokens(
-    provider_alias: string,
-    keycloakAccessCode: string,
+    _provider_alias: string,
+    _token: string,
   ): Promise<string | Record<string, unknown> | Error> {
-    try {
-      const url = `${this.KEYCLOACK_BASE_URL}/realms/${this.realm}/broker/${provider_alias}/token`;
-      const { data } = await axios.get<string | Record<string, unknown>>(url, {
-        headers: { Authorization: `Bearer ${keycloakAccessCode}` },
-      });
-      return data;
-    } catch (error) {
-      logHttpError(error);
-      if (axios.isAxiosError(error)) {
-        return new Error(error.message);
-      }
-      return new Error('error');
+    if (this.githubAccessToken) {
+      // github.ts authenticate() parses IDPTokens as query string to extract access_token
+      return `access_token=${this.githubAccessToken}&token_type=bearer`;
     }
+    // Return { error } shape so actions.tsx check `'error' in IDPTokens` works correctly
+    return { error: 'No GitHub access token available in session' };
+  }
+
+  /** Maps the backend user object to the shape Leafwriter expects. */
+  async getUserData() {
+    if (!this._userData?.user) return undefined;
+    const u = this._userData.user;
+    const nameParts = (u.name || u.username || '').trim().split(/\s+/);
+    return {
+      username: u.username,
+      email: u.email ?? undefined,
+      emailVerified: false,
+      firstName: nameParts[0],
+      lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : undefined,
+      avatar_url: u.avatarUrl ?? undefined,
+      url: u.profileUrl ?? `https://github.com/${u.username}`,
+    };
   }
 
   /**
-   * This function takes a Keycloak access code and returns a list of linked accounts
-   * @param {string} keycloakAccessCode - The access code that was returned from the Keycloak login.
-   * @returns An array of linked accounts
+   * Returns a hard-coded GitHub provider so Leafwriter can initialise
+   * the GitHub storage/identity service.
+   */
+  async getProviders(): Promise<Provider[] | Error> {
+    return [{ providerId: 'github', enabled: true } as unknown as Provider];
+  }
+
+  /**
+   * Redirect the user to GitHub OAuth via the backend.
+   * After login the backend will redirect back to the current page with
+   * `?token=<session_token>` which `setup()` will pick up on reload.
+   */
+  async login(_options?: { idpHint?: string }) {
+    const redirect = encodeURIComponent(window.location.href);
+    window.location.href =
+      `${this.AUTH_API_BASE_URL}/api/auth/github/start?frontendRedirectUrl=${redirect}`;
+  }
+
+  /** Calls the backend logout endpoint and clears local state. */
+  async logout() {
+    if (this.sessionToken) {
+      try {
+        await axios.post(
+          `${this.AUTH_API_BASE_URL}/api/auth/logout`,
+          {},
+          { headers: { Authorization: `Bearer ${this.sessionToken}` } },
+        );
+      } catch {
+        // best-effort logout
+      }
+    }
+    localStorage.removeItem(STORAGE_KEY);
+    this.sessionToken = null;
+    this._userData = null;
+    this.githubAccessToken = null;
+  }
+
+  isLoggedIn() {
+    return !!this._userData;
+  }
+
+  /** Sessions are managed server-side; token expiry is not tracked client-side. */
+  isTokenExpired() {
+    return false;
+  }
+
+  /** No-op: sessions are refreshed server-side. */
+  async updateToken() {}
+
+  userHasRole(roles: string[]) {
+    const permissions: string[] = this._userData?.permissions ?? [];
+    return roles.some((r) => permissions.includes(r) || permissions.includes('*'));
+  }
+
+  userHasResourceRole(role: string, _resource?: string) {
+    return this.userHasRole([role]);
+  }
+
+  /** Not supported without Keycloak. */
+  accountManagement() {}
+
+  /**
+   * Returns the single GitHub linked account from the session.
+   * Replaces the LINCS auth-api linked accounts endpoint.
    */
   async getLinkedAccounts(
-    keycloakAccessCode: string,
-    username: string,
+    _token: string,
+    _username: string,
   ): Promise<LinkedAccount[] | HTTPRequestError> {
-    if (!this.AUTH_API_URL) {
-      return { error: { message: 'AUTH API BASE URL is unedefined' } };
+    if (!this._userData?.user) {
+      return { error: { message: 'Not authenticated' } };
     }
-
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const { body, status } = await authApi.users.getLinkedAccounts({
-      headers: { authorization: `Bearer ${keycloakAccessCode}` },
-      params: { username },
-    });
-
-    if (status === 401 || status === 404 || status === 500) {
-      console.warn(body.message);
-      return {
-        error: { status, message: `Linked Accounts: ${body.message}` },
-      };
-    }
-
-    if (status !== 200) {
-      console.warn({ error: 'something went wrong' });
-      return {
-        error: { status: status, message: `Linked Accounts: something went wrong` },
-      };
-    }
-
-    return body;
+    const u = this._userData.user;
+    return [
+      {
+        identityProvider: 'github',
+        userId: String(u.id ?? '').replace('github:', ''),
+        userName: u.username,
+      },
+    ];
   }
 
-  /**
-   * This function takes an identity provider and a keycloak access code and returns a link account URL
-   * @param {string} identity_provider - The name of the identity provider you want to link to.
-   * @param {string} keycloakAccessCode - The access code that you get from the Keycloak server when
-   * you log in.
-   * @returns A promise that resolves to a string or an IHTTPRequestError
-   */
-  async getLinkAccountUrl({
-    username,
-    provider,
-    keycloakAccessCode,
-  }: {
+  /** Account linking is not supported in standalone GitHub OAuth mode. */
+  async getLinkAccountUrl(_params: {
     username: string;
     provider: string;
     keycloakAccessCode: string;
   }): Promise<string | HTTPRequestError> {
-    if (!this.AUTH_API_URL) {
-      return { error: { message: 'AUTH API URL is unedefined' } };
-    }
-
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const { body, status } = await authApi.users.getLinkAccountUrl({
-      headers: { authorization: `Bearer ${keycloakAccessCode}` },
-      params: { username },
-      query: {
-        provider,
-        redirectUri: this.LINK_ACCOUNTS_CALLBACK_URL,
-      },
-    });
-
-    if (status === 401 || status === 404 || status === 500) {
-      console.warn(body.message);
-      return {
-        error: {
-          status: status,
-          message: `Link Account URL: ${body.message}`,
-        },
-      };
-    }
-
-    if (status !== 200) {
-      console.warn({ error: 'something went wrong' });
-      return {
-        error: { status, message: 'Link Account URL: something went wrong' },
-      };
-    }
-
-    return body.url;
-  }
-
-  async getProviders(): Promise<Provider[] | Error> {
-    if (!this.AUTH_API_URL) {
-      return new Error('AUTH API URL is unedefined');
-    }
-
-    const authApi = getLincsAuthApi(this.AUTH_API_URL);
-    const { body, status } = await authApi.providers.getAll();
-
-    if (status === 200) return body;
-
-    if (status === 500) {
-      console.warn(status, body.message);
-      return [];
-    }
-
-    return new Error('error');
+    return {
+      error: { message: 'Account linking is not supported in GitHub OAuth mode' },
+    };
   }
 }
 
