@@ -44,6 +44,7 @@
             </q-input>
             <!-- Permission filters (like document status filters) -->
             <div class="row items-center q-gutter-md">
+              <q-checkbox v-model="permFilter.isAdmin" label="Admin" dense />
               <q-checkbox v-model="permFilter.canEdit" label="Can edit" dense />
               <q-checkbox v-model="permFilter.canValidate" label="Can validate" dense />
               <q-checkbox v-model="permFilter.canPublish" label="Can publish" dense />
@@ -60,7 +61,7 @@
         <q-table
           :rows="filteredUsers"
           :columns="columns"
-          row-key="email"
+          row-key="identityKey"
           flat
           :filter="filter"
           class="text-grey-9"
@@ -74,8 +75,21 @@
               <!-- v-model binds directly to the row field (reactive) -->
               <q-checkbox 
                 dense 
-                v-model="props.row.canEdit" 
+                :model-value="props.row.isAdmin || props.row.canEdit"
                 color="indigo-9"
+                :disable="props.row.isAdmin"
+                @update:model-value="(value) => (props.row.canEdit = value)"
+              />
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-isAdmin="props">
+            <q-td :props="props" class="text-center">
+              <q-checkbox
+                dense
+                v-model="props.row.isAdmin"
+                color="negative"
+                @update:model-value="handleAdminToggle(props.row)"
               />
             </q-td>
           </template>
@@ -83,14 +97,26 @@
           <!-- Custom cell: Can Validate checkbox -->
           <template v-slot:body-cell-canValidate="props">
             <q-td :props="props" class="text-center">
-              <q-checkbox dense v-model="props.row.canValidate" color="indigo-9" />
+              <q-checkbox
+                dense
+                :model-value="props.row.isAdmin || props.row.canValidate"
+                color="indigo-9"
+                :disable="props.row.isAdmin"
+                @update:model-value="(value) => (props.row.canValidate = value)"
+              />
             </q-td>
           </template>
 
           <!-- Custom cell: Can Publish checkbox -->
           <template v-slot:body-cell-canPublish="props">
             <q-td :props="props" class="text-center">
-              <q-checkbox dense v-model="props.row.canPublish" color="indigo-9" />
+              <q-checkbox
+                dense
+                :model-value="props.row.isAdmin || props.row.canPublish"
+                color="indigo-9"
+                :disable="props.row.isAdmin"
+                @update:model-value="(value) => (props.row.canPublish = value)"
+              />
             </q-td>
           </template>
 
@@ -166,16 +192,39 @@
           dense
         />
 
+        <q-input
+          v-model="newUser.githubUsername"
+          label="GitHub username"
+          outlined
+          dense
+        />
+
         <!-- Permission checkboxes -->
         <div class="row q-col-gutter-sm">
-          <div class="col">
-            <q-checkbox v-model="newUser.canEdit" label="Can edit" />
+          <div class="col-12">
+            <q-checkbox
+              v-model="newUser.isAdmin"
+              label="Admin"
+              color="negative"
+              @update:model-value="handleAdminToggle(newUser)"
+            />
           </div>
           <div class="col">
-            <q-checkbox v-model="newUser.canValidate" label="Can validate" />
+            <q-checkbox v-model="newUser.canEdit" label="Can edit" :disable="newUser.isAdmin" />
           </div>
           <div class="col">
-            <q-checkbox v-model="newUser.canPublish" label="Can publish" />
+            <q-checkbox
+              v-model="newUser.canValidate"
+              label="Can validate"
+              :disable="newUser.isAdmin"
+            />
+          </div>
+          <div class="col">
+            <q-checkbox
+              v-model="newUser.canPublish"
+              label="Can publish"
+              :disable="newUser.isAdmin"
+            />
           </div>
         </div>
       </q-card-section>
@@ -200,6 +249,13 @@
       <q-card-section class="q-gutter-md">
         <q-input v-model="editUser.name" label="Name" outlined dense />
         <q-input v-model="editUser.email" label="Email" type="email" outlined dense />
+        <q-input v-model="editUser.githubUsername" label="GitHub username" outlined dense />
+        <q-checkbox
+          v-model="editUser.isAdmin"
+          label="Admin"
+          color="negative"
+          @update:model-value="handleAdminToggle(editUser)"
+        />
       </q-card-section>
 
       <q-card-actions align="right">
@@ -239,6 +295,7 @@ const filter = ref('')
 
 // Permission filter checkboxes (all false by default)
 const permFilter = ref({
+  isAdmin: false,
   canEdit: false,
   canValidate: false,
   canPublish: false,
@@ -250,6 +307,7 @@ const permFilter = ref({
 const filteredUsers = computed(() => {
   const selected = []
 
+  if (permFilter.value.isAdmin) selected.push('isAdmin')
   if (permFilter.value.canEdit) selected.push('canEdit')
   if (permFilter.value.canValidate) selected.push('canValidate')
   if (permFilter.value.canPublish) selected.push('canPublish')
@@ -312,6 +370,15 @@ const columns = [
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
+  {
+    name: 'githubUsername',
+    align: 'left',
+    label: 'GitHub',
+    field: 'githubUsername',
+    sortable: true,
+    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
+  },
+  { name: 'isAdmin', align: 'center', label: 'Admin', field: 'isAdmin' },
   { name: 'canEdit', align: 'center', label: 'Can Edit', field: 'canEdit' },
   { name: 'canValidate', align: 'center', label: 'Can Validate', field: 'canValidate' },
   { name: 'canPublish', align: 'center', label: 'Can Publish', field: 'canPublish' },
@@ -327,13 +394,35 @@ const users = ref([])
 const loading = ref(false)
 const hasLoadedUsers = ref(false)
 
+const normalizeIdentity = (value) => String(value || '').trim().toLowerCase()
+
+const buildIdentityKey = (user) =>
+  normalizeIdentity(user?.email) || normalizeIdentity(user?.githubUsername)
+
+const normalizeUserEntry = (user = {}) => {
+  const normalized = {
+    ...user,
+    email: String(user.email || '').trim(),
+    githubUsername: String(user.githubUsername || '').trim(),
+    isAdmin: !!user.isAdmin,
+    canEdit: !!user.canEdit,
+    canValidate: !!user.canValidate,
+    canPublish: !!user.canPublish,
+  }
+
+  return {
+    ...normalized,
+    identityKey: buildIdentityKey(normalized),
+  }
+}
+
 /**
  * Load users when the page is mounted from backend API.
  */
 onMounted(async () => {
   loading.value = true
   try {
-    users.value = await loadUsers()
+    users.value = (await loadUsers()).map(normalizeUserEntry)
     hasLoadedUsers.value = true
   } catch (e) {
     $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
@@ -350,7 +439,18 @@ const persistUsers = (val) => {
   if (saveTimer) clearTimeout(saveTimer)
   saveTimer = setTimeout(async () => {
     try {
-      await saveUsers(val)
+      const payload = val.map((entry) => {
+        const user = { ...entry }
+        delete user.identityKey
+
+        return {
+          ...user,
+          canEdit: user.isAdmin ? false : user.canEdit,
+          canValidate: user.isAdmin ? false : user.canValidate,
+          canPublish: user.isAdmin ? false : user.canPublish,
+        }
+      })
+      await saveUsers(payload)
     } catch (e) {
       $q.notify({ color: 'negative', message: e?.message || 'Failed to save users' })
     }
@@ -375,7 +475,7 @@ const confirmDelete = (user) => {
 
 // Removes a user by email (email is the unique key)
 const deleteUser = (user) => {
-  users.value = users.value.filter(u => u.email !== user.email)
+  users.value = users.value.filter((u) => u.identityKey !== user.identityKey)
 
   $q.notify({
     color: 'positive',
@@ -393,10 +493,22 @@ const showAddDialog = ref(false)
 const newUser = ref({
   name: '',
   email: '',
+  githubUsername: '',
+  isAdmin: false,
   canEdit: false,
   canValidate: false,
   canPublish: false,
 })
+
+const handleAdminToggle = (target) => {
+  if (!target) return
+
+  if (target.isAdmin) {
+    target.canEdit = false
+    target.canValidate = false
+    target.canPublish = false
+  }
+}
 
 /**
  * addUser() validates the form, checks duplicates, then pushes the new user
@@ -404,30 +516,45 @@ const newUser = ref({
  */
 const addUser = () => {
   // Basic validation
-  if (!newUser.value.name || !newUser.value.email) {
+  if (!newUser.value.name || (!newUser.value.email && !newUser.value.githubUsername)) {
     $q.notify({
       color: 'negative',
-      message: 'Name and email are required',
+      message: 'Name and at least one identity field are required',
     })
     return
   }
 
-  // Prevent duplicates: email should be unique
-  if (users.value.some(u => u.email === newUser.value.email)) {
+  const email = newUser.value.email.trim()
+  const githubUsername = newUser.value.githubUsername.trim()
+
+  const duplicate = users.value.some(
+    (u) =>
+      (email && normalizeIdentity(u.email) === normalizeIdentity(email)) ||
+      (githubUsername &&
+        normalizeIdentity(u.githubUsername) === normalizeIdentity(githubUsername)),
+  )
+
+  if (duplicate) {
     $q.notify({
       color: 'negative',
-      message: 'A user with this email already exists',
+      message: 'A user with this email or GitHub username already exists',
     })
     return
   }
 
   // Add new user to the table data
-  users.value.push({ ...newUser.value })
+  users.value.push(normalizeUserEntry({
+    ...newUser.value,
+    email,
+    githubUsername,
+  }))
 
   // Reset the form for next time
   newUser.value = {
     name: '',
     email: '',
+    githubUsername: '',
+    isAdmin: false,
     canEdit: false,
     canValidate: false,
     canPublish: false,
@@ -445,29 +572,35 @@ const addUser = () => {
 // Edit user dialogue 
 const showEditUserDialog = ref(false)
 
-// keep track of which user is being edited (by email)
-const editUserOriginalEmail = ref(null)
+// keep track of which user is being edited
+const editUserOriginalKey = ref(null)
 
 // editable copy
 
-const editUserOriginal = ref({ name: '', email: '' })
+const editUserOriginal = ref({ name: '', email: '', githubUsername: '', isAdmin: false })
 
 const editUser = ref({
   name: '',
   email: '',
+  githubUsername: '',
+  isAdmin: false,
 })
 
 const openEditUser = (row) => {
-  editUserOriginalEmail.value = row.email
+  editUserOriginalKey.value = row.identityKey
 
   editUserOriginal.value = {
     name: row.name,
     email: row.email,
+    githubUsername: row.githubUsername,
+    isAdmin: !!row.isAdmin,
   }
 
   editUser.value = {
     name: row.name,
     email: row.email,
+    githubUsername: row.githubUsername,
+    isAdmin: !!row.isAdmin,
   }
 
   showEditUserDialog.value = true
@@ -477,33 +610,61 @@ const openEditUser = (row) => {
 const saveEditedUser = () => {
   const name = editUser.value.name.trim()
   const email = editUser.value.email.trim()
+  const githubUsername = editUser.value.githubUsername.trim()
+  const isAdmin = !!editUser.value.isAdmin
 
-  if (!name || !email) {
-    $q.notify({ color: 'negative', message: 'Name and email are required' })
+  if (!name || (!email && !githubUsername)) {
+    $q.notify({ color: 'negative', message: 'Name and at least one identity field are required' })
     return
   }
 
   const originalName = (editUserOriginal.value.name || '').trim()
   const originalEmail = (editUserOriginal.value.email || '').trim()
+  const originalGithubUsername = (editUserOriginal.value.githubUsername || '').trim()
+  const originalIsAdmin = !!editUserOriginal.value.isAdmin
 
-  if (name === originalName && email === originalEmail) {
+  if (
+    name === originalName &&
+    email === originalEmail &&
+    githubUsername === originalGithubUsername &&
+    isAdmin === originalIsAdmin
+  ) {
     $q.notify({ color: 'info', message: 'No changes to save' })
     showEditUserDialog.value = false
     return
   }
 
-  if (email !== editUserOriginalEmail.value && users.value.some((u) => u.email === email)) {
-    $q.notify({ color: 'negative', message: 'A user with this email already exists' })
+  const duplicate = users.value.some((u) => {
+    if (u.identityKey === editUserOriginalKey.value) return false
+
+    return (
+      (email && normalizeIdentity(u.email) === normalizeIdentity(email)) ||
+      (githubUsername &&
+        normalizeIdentity(u.githubUsername) === normalizeIdentity(githubUsername))
+    )
+  })
+
+  if (duplicate) {
+    $q.notify({
+      color: 'negative',
+      message: 'A user with this email or GitHub username already exists',
+    })
     return
   }
 
-  const idx = users.value.findIndex((u) => u.email === editUserOriginalEmail.value)
+  const idx = users.value.findIndex((u) => u.identityKey === editUserOriginalKey.value)
   if (idx === -1) {
     $q.notify({ color: 'negative', message: 'User not found' })
     return
   }
 
-  users.value[idx] = { ...users.value[idx], name, email }
+  users.value[idx] = normalizeUserEntry({
+    ...users.value[idx],
+    name,
+    email,
+    githubUsername,
+    isAdmin,
+  })
 
   showEditUserDialog.value = false
   $q.notify({ color: 'positive', message: 'User updated' })
@@ -513,14 +674,15 @@ const saveEditedUser = () => {
 let permToastTimer = null
 let prevPermSnapshot = new Map()
 
-// build a snapshot we can compare later (by email)
+// build a snapshot we can compare later
 const snapshotPerms = (list) => {
   const m = new Map()
   for (const u of list) {
-    m.set(u.email, {
+    m.set(u.identityKey, {
       canEdit: !!u.canEdit,
       canValidate: !!u.canValidate,
       canPublish: !!u.canPublish,
+      isAdmin: !!u.isAdmin,
     })
   }
   return m
@@ -542,12 +704,13 @@ watch(
     // Detect if any permission changed
     let changed = false
     for (const u of val) {
-      const prev = prevPermSnapshot.get(u.email)
+      const prev = prevPermSnapshot.get(u.identityKey)
       if (!prev) continue
       if (
         prev.canEdit !== !!u.canEdit ||
         prev.canValidate !== !!u.canValidate ||
-        prev.canPublish !== !!u.canPublish
+        prev.canPublish !== !!u.canPublish ||
+        prev.isAdmin !== !!u.isAdmin
       ) {
         changed = true
         break
