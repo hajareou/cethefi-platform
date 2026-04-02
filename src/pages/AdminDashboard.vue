@@ -145,7 +145,7 @@
                 flat
                 :color="getStatusColor(props.value).bg"
                 :text-color="getStatusColor(props.value).text"
-                class="text-weight-bold q-px-sm"
+                class="text-weight-bold q-px-sm status-chip"
               >
                 {{ formatStatus(props.value) }}
               </q-chip>
@@ -163,124 +163,103 @@
             </q-td>
           </template>
 
-          <template v-slot:body-cell-action="props">
+          <template v-slot:body-cell-edit="props">
             <q-td :props="props" class="text-center">
-              <q-btn flat round dense icon="more_vert" color="grey-8" @click.stop>
-                <q-menu
-                  :model-value="openMenuId === props.row.id"
-                  @update:model-value="(val) => setMenuOpen(props.row.id, val)"
-                >
-                  <q-list style="min-width: 200px">
-                    <q-item
-                      v-if="props.row.status === STATUS.DRAFT && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+              <q-btn
+                v-if="canRowEdit(props.row)"
+                outline
+                dense
+                no-caps
+                color="grey-8"
+                label="Edit"
+                class="compact-action-btn"
+                @click.stop="editDocument(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.DRAFT && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="submitForReview(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="send" />
-                      </q-item-section>
-                      <q-item-section>Submit for review</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-submit="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowSubmit(props.row)"
+                outline
+                dense
+                no-caps
+                color="orange-9"
+                label="Submit"
+                class="compact-action-btn"
+                @click.stop="submitForReview(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
-                      clickable
-                      v-close-popup
-                      @click="approveToReviewed(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="task_alt" />
-                      </q-item-section>
-                      <q-item-section>Approve</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-approve="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowApprove(props.row)"
+                outline
+                dense
+                no-caps
+                color="blue-8"
+                label="Approve"
+                class="compact-action-btn"
+                @click.stop="approveToReviewed(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
-                      clickable
-                      v-close-popup
-                      @click="rejectToDraft(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="undo" />
-                      </q-item-section>
-                      <q-item-section>Reject</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-publish="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowPublish(props.row)"
+                dense
+                no-caps
+                :outline="props.row.status === STATUS.PUBLISHED"
+                :color="props.row.status === STATUS.PUBLISHED ? 'negative' : 'positive'"
+                :label="props.row.status === STATUS.PUBLISHED ? 'Unpublish' : 'Publish'"
+                class="compact-action-btn"
+                @click.stop="
+                  props.row.status === STATUS.PUBLISHED
+                    ? unpublishDocument(props.row)
+                    : publishDocument(props.row)
+                "
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.REVIEWED && canPublish"
-                      clickable
-                      v-close-popup
-                      @click="publishDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="publish" />
-                      </q-item-section>
-                      <q-item-section>Publish</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="props.row.status === STATUS.REVIEWED && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-reject="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowReject(props.row)"
+                outline
+                dense
+                no-caps
+                color="warning"
+                label="Reject"
+                class="compact-action-btn"
+                @click.stop="rejectToDraft(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.PUBLISHED && canPublish"
-                      clickable
-                      v-close-popup
-                      @click="unpublishDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="visibility_off" />
-                      </q-item-section>
-                      <q-item-section>Unpublish</q-item-section>
-                    </q-item>
-
-                    <q-separator v-if="canPublish" />
-
-                    <q-item
-                      v-if="canPublish"
-                      clickable
-                      v-close-popup
-                      @click="confirmDeleteDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="delete" color="negative" />
-                      </q-item-section>
-                      <q-item-section class="text-negative"> Delete </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
+          <template v-slot:body-cell-delete="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowDelete(props.row)"
+                flat
+                dense
+                no-caps
+                color="negative"
+                label="Delete"
+                class="compact-action-btn"
+                @click.stop="confirmDeleteDocument(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
             </q-td>
           </template>
         </q-table>
@@ -537,6 +516,8 @@ const baseColumns = [
     field: 'year',
     sortable: true,
     align: 'center',
+    style: 'width: 76px; max-width: 76px',
+    headerStyle: 'width: 76px; max-width: 76px',
   },
   {
     name: 'last_modified',
@@ -544,19 +525,54 @@ const baseColumns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
+    style: 'width: 132px; max-width: 132px',
+    headerStyle: 'width: 132px; max-width: 132px',
     sort: (a, b) => (Date.parse(a) || 0) - (Date.parse(b) || 0),
   },
-  { name: 'status', align: 'center', label: 'Status', field: 'status' },
+  {
+    name: 'status',
+    align: 'center',
+    label: 'Status',
+    field: 'status',
+    style: 'width: 172px; max-width: 172px',
+    headerStyle: 'width: 172px; max-width: 172px',
+  },
 ]
-const actionColumn = {
-  name: 'action',
+
+const guestColumns = [...baseColumns]
+
+const makeActionColumn = (name, label, width = 100) => ({
+  name,
   align: 'center',
-  label: 'Action',
-  field: 'action',
-}
+  label,
+  field: name,
+  sortable: false,
+  style: `width: ${width}px; max-width: ${width}px`,
+  headerStyle: `width: ${width}px; max-width: ${width}px`,
+})
 
 const columns = computed(() => {
-  return canUseActions.value ? [...baseColumns, actionColumn] : baseColumns
+  if (isGuest.value) return guestColumns
+  if (!canUseActions.value) return baseColumns
+
+  const actionColumns = []
+
+  if (canEdit.value) {
+    actionColumns.push(makeActionColumn('edit', 'Edit', 90))
+    actionColumns.push(makeActionColumn('submit', 'Submit', 100))
+  }
+
+  if (canValidate.value) {
+    actionColumns.push(makeActionColumn('approve', 'Approve', 104))
+    actionColumns.push(makeActionColumn('reject', 'Reject', 96))
+  }
+
+  if (canPublish.value) {
+    actionColumns.push(makeActionColumn('publish', 'Publish', 112))
+    actionColumns.push(makeActionColumn('delete', 'Delete', 92))
+  }
+
+  return [...baseColumns, ...actionColumns]
 })
 
 /*
@@ -610,6 +626,21 @@ const getStatusColor = (status) => {
   if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
   return { bg: 'grey-2', text: 'grey-8' }
 }
+
+const canRowEdit = (doc) =>
+  canEdit.value &&
+  [STATUS.DRAFT, STATUS.SUBMITTED, STATUS.REVIEWED].includes(doc?.status)
+
+const canRowSubmit = (doc) => canEdit.value && doc?.status === STATUS.DRAFT
+
+const canRowApprove = (doc) => canValidate.value && doc?.status === STATUS.SUBMITTED
+
+const canRowReject = (doc) => canValidate.value && doc?.status === STATUS.SUBMITTED
+
+const canRowPublish = (doc) =>
+  canPublish.value && [STATUS.REVIEWED, STATUS.PUBLISHED].includes(doc?.status)
+
+const canRowDelete = () => canPublish.value
 
 const getShortAuthor = (author) => {
   const normalized = String(author ?? '').trim()
@@ -1015,5 +1046,32 @@ const openDocViewer = async (doc) => {
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
+}
+
+.status-chip {
+  min-width: 148px;
+  max-width: 100%;
+  justify-content: center;
+}
+
+:deep(.status-chip .q-chip__content) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  width: 100%;
+}
+
+.compact-action-btn {
+  min-width: 72px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.action-placeholder {
+  color: #9e9e9e;
+  font-weight: 500;
 }
 </style>
