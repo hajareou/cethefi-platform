@@ -53,6 +53,19 @@ export const useAuthStore = defineStore('auth', {
       this.authToken = safeGetLocalStorage(AUTH_TOKEN_KEY)
       this.authSession = parseSession(safeGetLocalStorage(AUTH_SESSION_KEY))
     },
+    async verifyToken() {
+      if (!this.authToken) return
+      const api = import.meta.env.VITE_AUTH_API_BASE_URL
+      if (!api) return
+      try {
+        const res = await fetch(`${api}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${this.authToken}` },
+        })
+        if (!res.ok) this.clearSession()
+      } catch {
+        this.clearSession()
+      }
+    },
     setSession({ token, session }) {
       this.authToken = token || null
       this.authSession = session || null
