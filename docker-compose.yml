@@ -16,7 +16,7 @@ services:
       context: ./leafwriter
       dockerfile: Dockerfile
     environment:
-      - AUTH_API_URL=http://localhost:8091
+      - AUTH_API_URL=${BACKEND_PUBLIC_URL:-http://localhost:8091}
       - KEYCLOAK_URL=
     ports:
       - "3000:3000"
