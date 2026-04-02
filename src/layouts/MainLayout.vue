@@ -162,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
@@ -170,6 +170,10 @@ import { useAuthStore } from 'src/stores/auth'
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
+
+onMounted(() => {
+  authStore.verifyToken()
+})
 const API = import.meta.env.VITE_AUTH_API_BASE_URL
 
 const isGuest = computed(() => authStore.isGuest)
