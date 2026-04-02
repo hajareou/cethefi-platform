@@ -1,0 +1,135 @@
+import AddLinkIcon from '@mui/icons-material/AddLink';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckIcon from '@mui/icons-material/Check';
+import {
+  Icon,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  useTheme,
+} from '@mui/material';
+import { StyledToolTip } from '@src/components';
+import { supportedStorageProviders } from '@src/config';
+import { useAnalytics } from '@src/hooks';
+import { getIcon, type IconName } from '@src/icons';
+import { useActions, useAppState } from '@src/overmind';
+import { BroadcastChannel } from 'broadcast-channel';
+import chroma from 'chroma-js';
+import { type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { SubMenu } from '../types';
+
+export const Storage = ({ onBack, onClose }: SubMenu) => {
+  const theme = useTheme();
+  const { user } = useAppState().auth;
+  const { supportedProviders } = useAppState().providers;
+
+  const { getLinkedAccounts, linkAccount } = useActions().auth;
+  const { setPrefStorageProvider } = useActions().storage;
+  const { notifyViaSnackbar } = useActions().ui;
+
+  const { t } = useTranslation();
+
+  const { analytics } = useAnalytics();
+
+  const handleSelect = async (event: MouseEvent, id: string) => {
+    event.stopPropagation();
+
+    if (user?.prefStorageProvider === id) return;
+    setPrefStorageProvider(id);
+
+    if (analytics) analytics.track('storage', { storage: id });
+    onClose();
+  };
+
+  const handleLinkAccount = async (id: string) => {
+    const linkAccountUrl = await linkAccount(id);
+    if (!linkAccountUrl) return;
+
+    const channel = new BroadcastChannel('Leaf-Writer-Link-Accounts');
+    channel.onmessage = async (linkAccountCallback) => {
+      channel.close();
+
+      if (!linkAccountCallback.success) {
+        notifyViaSnackbar(`${t(`LWC.error.something_went_wrong`)}`);
+        return;
+      }
+
+      await getLinkedAccounts();
+
+      if (!user?.prefStorageProvider) {
+        setPrefStorageProvider(id);
+        if (analytics) analytics.track('storage', { storage: id });
+      }
+
+      notifyViaSnackbar('Account Linked');
+    };
+
+    window.open(linkAccountUrl);
+  };
+
+  return (
+    <List dense disablePadding sx={{ width: 300 }}>
+      <ListItem sx={{ px: 1.75 }}>
+        <IconButton onPointerDown={() => onBack()} size="small" sx={{ mr: 1 }}>
+          <ArrowBackIcon fontSize="small" />
+        </IconButton>
+        <ListItemText primary={t('LWC.commons.storage')} sx={{ textTransform: 'capitalize' }} />
+      </ListItem>
+      {supportedProviders
+        .filter(
+          (provider) =>
+            provider.providerId && supportedStorageProviders.includes(provider.providerId),
+        )
+        .map(({ providerId, service }) => (
+          <ListItem
+            key={providerId}
+            color="primary"
+            secondaryAction={
+              !service &&
+              providerId && (
+                <StyledToolTip
+                  arrow
+                  title={t('LWC.commons.link_your_account', { provider: providerId })}
+                >
+                  <IconButton onPointerDown={() => handleLinkAccount(providerId)} size="small">
+                    <AddLinkIcon color="primary" fontSize="small" />
+                  </IconButton>
+                </StyledToolTip>
+              )
+            }
+            sx={{ px: 0.5 }}
+          >
+            <ListItemButton
+              disabled={!service}
+              onPointerDown={(event) => providerId && handleSelect(event, providerId)}
+              selected={user?.prefStorageProvider === providerId}
+              sx={[
+                { borderRadius: 1 },
+                user?.prefStorageProvider === providerId && {
+                  '&.Mui-selected': {
+                    backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.15)`,
+                  },
+                },
+              ]}
+            >
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <Icon
+                  color={user?.prefStorageProvider === providerId ? 'primary' : 'inherit'}
+                  component={getIcon(providerId as IconName)}
+                  fontSize="small"
+                />
+              </ListItemIcon>
+              <ListItemText primary={providerId} sx={{ textTransform: 'capitalize' }} />
+              {user?.prefStorageProvider === providerId && (
+                <CheckIcon color="primary" fontSize="small" />
+              )}
+            </ListItemButton>
+          </ListItem>
+        ))}
+    </List>
+  );
+};

@@ -1,0 +1,49 @@
+import { Typography, useTheme, type TypographyProps } from '@mui/material';
+
+interface TextEmphasis extends TypographyProps {
+  color?: 'primary' | 'secondary' | 'info' | 'warning' | 'error';
+  disablePadding?: boolean;
+  variation?: 'filled' | 'outlined' | 'text';
+}
+
+export const TextEmphasis = ({
+  color,
+  children,
+  disablePadding = false,
+  variation = 'text',
+  ...props
+}: TextEmphasis) => {
+  const theme = useTheme();
+
+  const accentColor = color ? theme.vars.palette[color].main : theme.vars.palette.text.primary;
+
+  return (
+    <Typography
+      borderColor={(props.borderColor ?? variation === 'outlined') ? accentColor : 'inherent'}
+      borderRadius={props.borderRadius ?? 1}
+      component="span"
+      fontWeight={props.fontWeight ?? 700}
+      mx={props.mx || disablePadding ? 0 : variation === 'text' ? 0 : 0.5}
+      px={props.px || variation === 'text' ? 0 : 0.5}
+      py={props.py || variation === 'text' ? 0 : 0.25}
+      sx={[
+        {
+          color: accentColor,
+          borderWidth: 0,
+          borderStyle: 'none',
+        },
+        variation === 'filled' && {
+          backgroundColor: accentColor,
+          color: theme.vars.palette.background.paper,
+        },
+        variation === 'outlined' && {
+          borderWidth: 1,
+          borderStyle: 'solid',
+        },
+      ]}
+      variant="inherit"
+    >
+      {children}
+    </Typography>
+  );
+};

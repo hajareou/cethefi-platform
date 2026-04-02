@@ -1,0 +1,73 @@
+# Use Auto DevOps pipeline
+# https://gitlab.com/gitlab-org/gitlab/blob/master/lib/gitlab/ci/templates/Auto-DevOps.gitlab-ci.yml
+include:
+  - template: Auto-DevOps.gitlab-ci.yml
+
+variables:
+  # Disable some Auto DevOps tests
+  BROWSER_PERFORMANCE_DISABLED: 1
+  CODE_QUALITY_DISABLED: 1
+  LICENSE_MANAGEMENT_DISABLED: 1
+  DISABLE_LICENSE_SCANNING: 1
+  SAST_DISABLED: 1
+  SECRET_DETECTION_DISABLED: 1
+  DAST_DISABLED: 1
+  PERFORMANCE_DISABLED: 1
+
+  # GitLab CI configuration
+  # TEST_DISABLED: 1
+  POSTGRES_ENABLED: "false"
+  STAGING_ENABLED: 1
+  KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
+  KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
+  KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG
+
+  K8S_SECRET_GA_MEASUREMENT_ID: $GA_MEASUREMENT_ID
+  K8S_SECRET_KEYCLOAK_URL: $KEYCLOAK_URL
+  K8S_SECRET_AUTH_API_URL: $AUTH_API_URL
+
+# Only rebuild node_modules if package.json changes
+cache:
+  key:
+    files:
+      - package.json
+  paths:
+    - node_modules
+
+# Overwrite test job
+test:
+  stage: test
+  image: node:20.9-alpine
+  script:
+    - npm install
+    - npm test
+  needs:
+    - build
+
+# Template to override common stage/prod parameters
+.deployment: &deployment
+  environment:
+    url: http://leaf-writer.$KUBE_INGRESS_BASE_DOMAIN
+
+# override some staging parameters
+staging:
+  variables:
+    KUBE_INGRESS_BASE_DOMAIN: stage.lincsproject.ca
+    KUBE_CONTEXT: "calincs/gitlab-agents:stage-agent"
+    KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-staging
+  <<: *deployment
+
+# override some production parameters
+production_manual:
+  variables:
+    KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
+    KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
+    KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-production
+    NPM_AUTH_TOKEN: $NPM_AUTH_TOKEN
+  before_script:
+    - apk add --update npm
+    - npm i -g changeset typescript webpack shelljs webpack-cli
+    - npm ci
+    - npm config set -- '//registry.npmjs.org/:_authToken' "${NPM_AUTH_TOKEN}"
+    - npm run release
+  <<: *deployment
