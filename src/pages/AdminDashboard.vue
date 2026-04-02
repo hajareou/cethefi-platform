@@ -127,6 +127,17 @@
           v-model:pagination="pagination"
           @row-click="onRowClick"
         >
+          <template v-slot:body-cell-title="props">
+            <q-td :props="props" class="text-left">
+              <span class="dashboard-title cursor-help">
+                {{ props.value }}
+                <q-tooltip v-if="hasFullTitleTooltip(props.value)">
+                  {{ props.value }}
+                </q-tooltip>
+              </span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-status="props">
             <q-td :props="props" class="text-center">
               <q-chip
@@ -141,6 +152,17 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-author="props">
+            <q-td :props="props" class="text-left">
+              <span class="cursor-help">
+                {{ getShortAuthor(props.value) }}
+                <q-tooltip v-if="hasFullAuthorTooltip(props.value)">
+                  {{ props.value }}
+                </q-tooltip>
+              </span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-action="props">
             <q-td :props="props" class="text-center">
               <q-btn flat round dense icon="more_vert" color="grey-8" @click.stop>
@@ -149,7 +171,6 @@
                   @update:model-value="(val) => setMenuOpen(props.row.id, val)"
                 >
                   <q-list style="min-width: 200px">
-                    <!-- DRAFT -->
                     <q-item
                       v-if="props.row.status === STATUS.DRAFT && canEdit"
                       clickable
@@ -174,7 +195,6 @@
                       <q-item-section>Submit for review</q-item-section>
                     </q-item>
 
-                    <!-- SUBMITTED FOR REVIEW -->
                     <q-item
                       v-if="props.row.status === STATUS.SUBMITTED && canValidate"
                       clickable
@@ -210,7 +230,6 @@
                       <q-item-section>Edit</q-item-section>
                     </q-item>
 
-                    <!-- REVIEWED -->
                     <q-item
                       v-if="props.row.status === STATUS.REVIEWED && canPublish"
                       clickable
@@ -234,7 +253,6 @@
                       <q-item-section>Edit</q-item-section>
                     </q-item>
 
-                    <!-- PUBLISHED -->
                     <q-item
                       v-if="props.row.status === STATUS.PUBLISHED && canPublish"
                       clickable
@@ -249,7 +267,6 @@
 
                     <q-separator v-if="canPublish" />
 
-                    <!-- DELETE -->
                     <q-item
                       v-if="canPublish"
                       clickable
@@ -498,7 +515,9 @@ const baseColumns = [
     label: 'Document Title',
     field: 'title',
     sortable: true,
-    classes: 'cell-wrap',
+    classes: 'cell-wrap title-column',
+    style: 'width: 240px; max-width: 240px',
+    headerStyle: 'width: 240px; max-width: 240px',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -507,7 +526,9 @@ const baseColumns = [
     label: 'Author',
     field: 'author',
     sortable: true,
-    classes: 'cell-wrap',
+    classes: 'cell-wrap author-column',
+    style: 'width: 88px; max-width: 88px',
+    headerStyle: 'width: 88px; max-width: 88px',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -588,6 +609,23 @@ const getStatusColor = (status) => {
   if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
   if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
   return { bg: 'grey-2', text: 'grey-8' }
+}
+
+const getShortAuthor = (author) => {
+  const normalized = String(author ?? '').trim()
+  if (!normalized) return '...'
+  if (normalized.length <= 3) return normalized
+  return `${normalized.slice(0, 3)}...`
+}
+
+const hasFullAuthorTooltip = (author) => {
+  const normalized = String(author ?? '').trim()
+  return normalized.length > 3
+}
+
+const hasFullTitleTooltip = (title) => {
+  const normalized = String(title ?? '').trim()
+  return normalized.length > 28
 }
 
 // Extract "main" title + author from a TEI XML string
@@ -682,10 +720,7 @@ async function fetchGithubData() {
         }
 
         // Author: ONLY from TEI
-        row.author = meta?.author?.trim()
-          ? meta.author.trim()
-          : 'Unknown'
-
+        row.author = meta?.author?.trim() ? meta.author.trim() : 'Unknown'
       } catch (e) {
         // If TEI fetch/parse fails, keep existing values
         console.warn('Failed to read TEI meta for', row._path, e)
@@ -717,7 +752,6 @@ const submitForReview = (doc) => {
   if (!canEdit.value) return
   doc.status = STATUS.SUBMITTED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'info',
     message: 'Submitted for review',
@@ -729,7 +763,6 @@ const rejectToDraft = (doc) => {
   if (!canValidate.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'warning',
     message: 'Rejected. Sent back to draft',
@@ -741,7 +774,6 @@ const approveToReviewed = (doc) => {
   if (!canValidate.value) return
   doc.status = STATUS.REVIEWED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'positive',
     message: 'Document approved',
@@ -753,7 +785,6 @@ const publishDocument = (doc) => {
   if (!canPublish.value) return
   doc.status = STATUS.PUBLISHED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'positive',
     message: 'Document published',
@@ -765,7 +796,6 @@ const unpublishDocument = (doc) => {
   if (!canPublish.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'warning',
     message: 'Document unpublished',
@@ -828,7 +858,6 @@ const editDocument = (doc) => {
   const sessionToken = localStorage.getItem('authToken')
   if (sessionToken) params.set('sessionToken', sessionToken)
 
-  closeMenu()
   closeDocViewer()
 
   window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
@@ -862,20 +891,6 @@ const deleteDocument = (doc) => {
     color: 'negative',
     message: 'Document deleted',
   })
-}
-
-/*
-  Controls which dropdown menu is open
-*/
-const openMenuId = ref(null)
-
-const setMenuOpen = (id, val) => {
-  if (val) openMenuId.value = id
-  else if (openMenuId.value === id) openMenuId.value = null
-}
-
-const closeMenu = () => {
-  openMenuId.value = null
 }
 
 /*
@@ -991,3 +1006,14 @@ const openDocViewer = async (doc) => {
   }
 }
 </script>
+
+<style scoped>
+.dashboard-title {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+</style>
