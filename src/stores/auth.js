@@ -61,7 +61,16 @@ export const useAuthStore = defineStore('auth', {
         const res = await fetch(`${api}/api/auth/me`, {
           headers: { Authorization: `Bearer ${this.authToken}` },
         })
-        if (!res.ok) this.clearSession()
+        if (!res.ok) {
+          this.clearSession()
+          return
+        }
+
+        const profile = await res.json()
+        this.authSession = profile || null
+
+        if (profile) safeSetLocalStorage(AUTH_SESSION_KEY, JSON.stringify(profile))
+        else safeRemoveLocalStorage(AUTH_SESSION_KEY)
       } catch {
         this.clearSession()
       }
