@@ -68,7 +68,7 @@ const connectWithGithub = async () => {
     const health = await fetch(`${API}/health`)
     if (!health.ok) throw new Error('Auth backend is not reachable')
 
-    const redirect = `${window.location.origin}/#/auth/callback`
+    const redirect = `${window.location.origin}${window.location.pathname}#/auth/callback`
     window.location.assign(
       `${API}/api/auth/github/start?frontendRedirectUrl=${encodeURIComponent(redirect)}`,
     )
