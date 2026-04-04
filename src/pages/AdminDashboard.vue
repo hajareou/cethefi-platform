@@ -127,6 +127,17 @@
           v-model:pagination="pagination"
           @row-click="onRowClick"
         >
+          <template v-slot:body-cell-title="props">
+            <q-td :props="props" class="text-left">
+              <span class="dashboard-title cursor-help">
+                {{ props.value }}
+                <q-tooltip v-if="hasFullTitleTooltip(props.value)">
+                  {{ props.value }}
+                </q-tooltip>
+              </span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-status="props">
             <q-td :props="props" class="text-center">
               <q-chip
@@ -134,136 +145,121 @@
                 flat
                 :color="getStatusColor(props.value).bg"
                 :text-color="getStatusColor(props.value).text"
-                class="text-weight-bold q-px-sm"
+                class="text-weight-bold q-px-sm status-chip"
               >
                 {{ formatStatus(props.value) }}
               </q-chip>
             </q-td>
           </template>
 
-          <template v-slot:body-cell-action="props">
+          <template v-slot:body-cell-author="props">
+            <q-td :props="props" class="text-left">
+              <span class="cursor-help">
+                {{ getShortAuthor(props.value) }}
+                <q-tooltip v-if="hasFullAuthorTooltip(props.value)">
+                  {{ props.value }}
+                </q-tooltip>
+              </span>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-edit="props">
             <q-td :props="props" class="text-center">
-              <q-btn flat round dense icon="more_vert" color="grey-8" @click.stop>
-                <q-menu
-                  :model-value="openMenuId === props.row.id"
-                  @update:model-value="(val) => setMenuOpen(props.row.id, val)"
-                >
-                  <q-list style="min-width: 200px">
-                    <!-- DRAFT -->
-                    <q-item
-                      v-if="props.row.status === STATUS.DRAFT && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+              <q-btn
+                v-if="canRowEdit(props.row)"
+                outline
+                dense
+                no-caps
+                color="grey-8"
+                label="Edit"
+                class="compact-action-btn"
+                @click.stop="editDocument(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.DRAFT && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="submitForReview(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="send" />
-                      </q-item-section>
-                      <q-item-section>Submit for review</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-submit="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowSubmit(props.row)"
+                outline
+                dense
+                no-caps
+                color="orange-9"
+                label="Submit"
+                class="compact-action-btn"
+                @click.stop="submitForReview(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <!-- SUBMITTED FOR REVIEW -->
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
-                      clickable
-                      v-close-popup
-                      @click="approveToReviewed(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="task_alt" />
-                      </q-item-section>
-                      <q-item-section>Approve</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-approve="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowApprove(props.row)"
+                outline
+                dense
+                no-caps
+                color="blue-8"
+                label="Approve"
+                class="compact-action-btn"
+                @click.stop="approveToReviewed(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canValidate"
-                      clickable
-                      v-close-popup
-                      @click="rejectToDraft(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="undo" />
-                      </q-item-section>
-                      <q-item-section>Reject</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="props.row.status === STATUS.SUBMITTED && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-publish="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowPublish(props.row)"
+                dense
+                no-caps
+                :outline="props.row.status === STATUS.PUBLISHED"
+                :color="props.row.status === STATUS.PUBLISHED ? 'negative' : 'positive'"
+                :label="props.row.status === STATUS.PUBLISHED ? 'Unpublish' : 'Publish'"
+                class="compact-action-btn"
+                @click.stop="
+                  props.row.status === STATUS.PUBLISHED
+                    ? unpublishDocument(props.row)
+                    : publishDocument(props.row)
+                "
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <!-- REVIEWED -->
-                    <q-item
-                      v-if="props.row.status === STATUS.REVIEWED && canPublish"
-                      clickable
-                      v-close-popup
-                      @click="publishDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="publish" />
-                      </q-item-section>
-                      <q-item-section>Publish</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="props.row.status === STATUS.REVIEWED && canEdit"
-                      clickable
-                      v-close-popup
-                      @click="editDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="edit" />
-                      </q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
+          <template v-slot:body-cell-reject="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowReject(props.row)"
+                outline
+                dense
+                no-caps
+                color="warning"
+                label="Reject"
+                class="compact-action-btn"
+                @click.stop="rejectToDraft(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
+            </q-td>
+          </template>
 
-                    <!-- PUBLISHED -->
-                    <q-item
-                      v-if="props.row.status === STATUS.PUBLISHED && canPublish"
-                      clickable
-                      v-close-popup
-                      @click="unpublishDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="visibility_off" />
-                      </q-item-section>
-                      <q-item-section>Unpublish</q-item-section>
-                    </q-item>
-
-                    <q-separator v-if="canPublish" />
-
-                    <!-- DELETE -->
-                    <q-item
-                      v-if="canPublish"
-                      clickable
-                      v-close-popup
-                      @click="confirmDeleteDocument(props.row)"
-                    >
-                      <q-item-section avatar>
-                        <q-icon name="delete" color="negative" />
-                      </q-item-section>
-                      <q-item-section class="text-negative"> Delete </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
+          <template v-slot:body-cell-delete="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                v-if="canRowDelete(props.row)"
+                flat
+                dense
+                no-caps
+                color="negative"
+                label="Delete"
+                class="compact-action-btn"
+                @click.stop="confirmDeleteDocument(props.row)"
+              />
+              <span v-else class="action-placeholder">-</span>
             </q-td>
           </template>
         </q-table>
@@ -498,7 +494,9 @@ const baseColumns = [
     label: 'Document Title',
     field: 'title',
     sortable: true,
-    classes: 'cell-wrap',
+    classes: 'cell-wrap title-column',
+    style: 'width: 240px; max-width: 240px',
+    headerStyle: 'width: 240px; max-width: 240px',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -507,7 +505,9 @@ const baseColumns = [
     label: 'Author',
     field: 'author',
     sortable: true,
-    classes: 'cell-wrap',
+    classes: 'cell-wrap author-column',
+    style: 'width: 88px; max-width: 88px',
+    headerStyle: 'width: 88px; max-width: 88px',
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   {
@@ -516,6 +516,8 @@ const baseColumns = [
     field: 'year',
     sortable: true,
     align: 'center',
+    style: 'width: 76px; max-width: 76px',
+    headerStyle: 'width: 76px; max-width: 76px',
   },
   {
     name: 'last_modified',
@@ -523,19 +525,54 @@ const baseColumns = [
     label: 'Last Modified',
     field: 'lastModified',
     sortable: true,
+    style: 'width: 132px; max-width: 132px',
+    headerStyle: 'width: 132px; max-width: 132px',
     sort: (a, b) => (Date.parse(a) || 0) - (Date.parse(b) || 0),
   },
-  { name: 'status', align: 'center', label: 'Status', field: 'status' },
+  {
+    name: 'status',
+    align: 'center',
+    label: 'Status',
+    field: 'status',
+    style: 'width: 172px; max-width: 172px',
+    headerStyle: 'width: 172px; max-width: 172px',
+  },
 ]
-const actionColumn = {
-  name: 'action',
+
+const guestColumns = [...baseColumns]
+
+const makeActionColumn = (name, label, width = 100) => ({
+  name,
   align: 'center',
-  label: 'Action',
-  field: 'action',
-}
+  label,
+  field: name,
+  sortable: false,
+  style: `width: ${width}px; max-width: ${width}px`,
+  headerStyle: `width: ${width}px; max-width: ${width}px`,
+})
 
 const columns = computed(() => {
-  return canUseActions.value ? [...baseColumns, actionColumn] : baseColumns
+  if (isGuest.value) return guestColumns
+  if (!canUseActions.value) return baseColumns
+
+  const actionColumns = []
+
+  if (canEdit.value) {
+    actionColumns.push(makeActionColumn('edit', 'Edit', 90))
+    actionColumns.push(makeActionColumn('submit', 'Submit', 100))
+  }
+
+  if (canValidate.value) {
+    actionColumns.push(makeActionColumn('approve', 'Approve', 104))
+    actionColumns.push(makeActionColumn('reject', 'Reject', 96))
+  }
+
+  if (canPublish.value) {
+    actionColumns.push(makeActionColumn('publish', 'Publish', 112))
+    actionColumns.push(makeActionColumn('delete', 'Delete', 92))
+  }
+
+  return [...baseColumns, ...actionColumns]
 })
 
 /*
@@ -588,6 +625,38 @@ const getStatusColor = (status) => {
   if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
   if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
   return { bg: 'grey-2', text: 'grey-8' }
+}
+
+const canRowEdit = (doc) =>
+  canEdit.value &&
+  [STATUS.DRAFT, STATUS.SUBMITTED, STATUS.REVIEWED].includes(doc?.status)
+
+const canRowSubmit = (doc) => canEdit.value && doc?.status === STATUS.DRAFT
+
+const canRowApprove = (doc) => canValidate.value && doc?.status === STATUS.SUBMITTED
+
+const canRowReject = (doc) => canValidate.value && doc?.status === STATUS.SUBMITTED
+
+const canRowPublish = (doc) =>
+  canPublish.value && [STATUS.REVIEWED, STATUS.PUBLISHED].includes(doc?.status)
+
+const canRowDelete = () => canPublish.value
+
+const getShortAuthor = (author) => {
+  const normalized = String(author ?? '').trim()
+  if (!normalized) return '...'
+  if (normalized.length <= 3) return normalized
+  return `${normalized.slice(0, 3)}...`
+}
+
+const hasFullAuthorTooltip = (author) => {
+  const normalized = String(author ?? '').trim()
+  return normalized.length > 3
+}
+
+const hasFullTitleTooltip = (title) => {
+  const normalized = String(title ?? '').trim()
+  return normalized.length > 28
 }
 
 // Extract "main" title + author from a TEI XML string
@@ -682,10 +751,7 @@ async function fetchGithubData() {
         }
 
         // Author: ONLY from TEI
-        row.author = meta?.author?.trim()
-          ? meta.author.trim()
-          : 'Unknown'
-
+        row.author = meta?.author?.trim() ? meta.author.trim() : 'Unknown'
       } catch (e) {
         // If TEI fetch/parse fails, keep existing values
         console.warn('Failed to read TEI meta for', row._path, e)
@@ -717,7 +783,6 @@ const submitForReview = (doc) => {
   if (!canEdit.value) return
   doc.status = STATUS.SUBMITTED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'info',
     message: 'Submitted for review',
@@ -729,7 +794,6 @@ const rejectToDraft = (doc) => {
   if (!canValidate.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'warning',
     message: 'Rejected. Sent back to draft',
@@ -741,7 +805,6 @@ const approveToReviewed = (doc) => {
   if (!canValidate.value) return
   doc.status = STATUS.REVIEWED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'positive',
     message: 'Document approved',
@@ -753,7 +816,6 @@ const publishDocument = (doc) => {
   if (!canPublish.value) return
   doc.status = STATUS.PUBLISHED
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'positive',
     message: 'Document published',
@@ -765,7 +827,6 @@ const unpublishDocument = (doc) => {
   if (!canPublish.value) return
   doc.status = STATUS.DRAFT
   saveDocOverride(doc)
-  closeMenu()
   showNotify({
     color: 'warning',
     message: 'Document unpublished',
@@ -828,7 +889,6 @@ const editDocument = (doc) => {
   const sessionToken = localStorage.getItem('authToken')
   if (sessionToken) params.set('sessionToken', sessionToken)
 
-  closeMenu()
   closeDocViewer()
 
   window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
@@ -862,20 +922,6 @@ const deleteDocument = (doc) => {
     color: 'negative',
     message: 'Document deleted',
   })
-}
-
-/*
-  Controls which dropdown menu is open
-*/
-const openMenuId = ref(null)
-
-const setMenuOpen = (id, val) => {
-  if (val) openMenuId.value = id
-  else if (openMenuId.value === id) openMenuId.value = null
-}
-
-const closeMenu = () => {
-  openMenuId.value = null
 }
 
 /*
@@ -991,3 +1037,41 @@ const openDocViewer = async (doc) => {
   }
 }
 </script>
+
+<style scoped>
+.dashboard-title {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.status-chip {
+  min-width: 148px;
+  max-width: 100%;
+  justify-content: center;
+}
+
+:deep(.status-chip .q-chip__content) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  width: 100%;
+}
+
+.compact-action-btn {
+  min-width: 72px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.action-placeholder {
+  color: #9e9e9e;
+  font-weight: 500;
+}
+</style>
