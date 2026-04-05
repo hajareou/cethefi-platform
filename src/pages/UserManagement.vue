@@ -8,9 +8,9 @@
         <!-- ===== Header row (title + description + Add User button) ===== -->
         <div class="row items-center justify-between q-mb-md">
           <div>
-            <div class="text-h6 text-weight-bold text-grey-9">Authorized Users</div>
+            <div class="text-h6 text-weight-bold text-grey-9">{{ t('users.authorizedUsers') }}</div>
             <div class="text-caption text-grey-6">
-              Manage access and permissions via GitHub accounts
+              {{ t('users.manageSubtitle') }}
             </div>
           </div>
 
@@ -19,7 +19,7 @@
             unelevated
             no-caps
             icon="person_add"
-            label="Add User"
+            :label="t('users.addUser')"
             color="indigo-9"
             class="q-px-md"
             @click="showAddDialog = true"
@@ -35,7 +35,7 @@
               dense
               debounce="300"
               v-model="filter"
-              placeholder="Search name or email..."
+              :placeholder="t('users.searchPlaceholder')"
               class="q-mb-sm"
             >
               <template v-slot:append>
@@ -44,10 +44,10 @@
             </q-input>
             <!-- Permission filters (like document status filters) -->
             <div class="row items-center q-gutter-md">
-              <q-checkbox v-model="permFilter.isAdmin" label="Admin" dense />
-              <q-checkbox v-model="permFilter.canEdit" label="Can modify" dense />
-              <q-checkbox v-model="permFilter.canValidate" label="Can validate" dense />
-              <q-checkbox v-model="permFilter.canPublish" label="Can publish" dense />
+              <q-checkbox v-model="permFilter.isAdmin" :label="t('common.admin')" dense />
+              <q-checkbox v-model="permFilter.canEdit" :label="t('users.canModify')" dense />
+              <q-checkbox v-model="permFilter.canValidate" :label="t('users.canValidate')" dense />
+              <q-checkbox v-model="permFilter.canPublish" :label="t('users.canPublish')" dense />
             </div>
           </div>
         </div>
@@ -138,7 +138,7 @@
                       <q-item-section avatar>
                         <q-icon name="edit" />
                       </q-item-section>
-                      <q-item-section>Modify</q-item-section>
+                      <q-item-section>{{ t('common.modify') }}</q-item-section>
                     </q-item>
 
                     <q-separator />
@@ -149,7 +149,7 @@
                         <q-icon name="delete" color="negative" />
                       </q-item-section>
                       <q-item-section class="text-negative">
-                        Delete
+                        {{ t('common.delete') }}
                       </q-item-section>
                     </q-item>
 
@@ -170,7 +170,7 @@
   <q-dialog v-model="showAddDialog" persistent>
     <q-card style="min-width: 400px">
       <q-card-section>
-        <div class="text-h6">Add User</div>
+        <div class="text-h6">{{ t('users.addUser') }}</div>
       </q-card-section>
 
       <!-- Form fields -->
@@ -178,7 +178,7 @@
         <!-- User name -->
         <q-input
           v-model="newUser.name"
-          label="Name"
+          :label="t('common.name')"
           outlined
           dense
         />
@@ -186,7 +186,7 @@
         <!-- User email -->
         <q-input
           v-model="newUser.email"
-          label="Email"
+          :label="t('common.email')"
           type="email"
           outlined
           dense
@@ -194,7 +194,7 @@
 
         <q-input
           v-model="newUser.githubUsername"
-          label="GitHub username"
+          :label="t('users.githubUsername')"
           outlined
           dense
         />
@@ -204,25 +204,25 @@
           <div class="col-12">
             <q-checkbox
               v-model="newUser.isAdmin"
-              label="Admin"
+              :label="t('common.admin')"
               color="negative"
               @update:model-value="handleAdminToggle(newUser)"
             />
           </div>
           <div class="col">
-            <q-checkbox v-model="newUser.canEdit" label="Can modify" :disable="newUser.isAdmin" />
+            <q-checkbox v-model="newUser.canEdit" :label="t('users.canModify')" :disable="newUser.isAdmin" />
           </div>
           <div class="col">
             <q-checkbox
               v-model="newUser.canValidate"
-              label="Can validate"
+              :label="t('users.canValidate')"
               :disable="newUser.isAdmin"
             />
           </div>
           <div class="col">
             <q-checkbox
               v-model="newUser.canPublish"
-              label="Can publish"
+              :label="t('users.canPublish')"
               :disable="newUser.isAdmin"
             />
           </div>
@@ -232,9 +232,9 @@
       <!-- Dialog actions -->
       <q-card-actions align="right">
         <!-- Cancel closes the dialog -->
-        <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+        <q-btn flat :label="t('common.cancel')" color="grey-7" v-close-popup />
         <!-- Add validates the form and pushes a new user to the list -->
-        <q-btn unelevated label="Add" color="indigo-9" @click="addUser" />
+        <q-btn unelevated :label="t('common.add')" color="indigo-9" @click="addUser" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -243,24 +243,24 @@
   <q-dialog v-model="showEditUserDialog" persistent>
     <q-card style="min-width: 420px">
       <q-card-section>
-        <div class="text-h6">Modify user</div>
+        <div class="text-h6">{{ t('users.editUser') }}</div>
       </q-card-section>
 
       <q-card-section class="q-gutter-md">
-        <q-input v-model="editUser.name" label="Name" outlined dense />
-        <q-input v-model="editUser.email" label="Email" type="email" outlined dense />
-        <q-input v-model="editUser.githubUsername" label="GitHub username" outlined dense />
+        <q-input v-model="editUser.name" :label="t('common.name')" outlined dense />
+        <q-input v-model="editUser.email" :label="t('common.email')" type="email" outlined dense />
+        <q-input v-model="editUser.githubUsername" :label="t('users.githubUsername')" outlined dense />
         <q-checkbox
           v-model="editUser.isAdmin"
-          label="Admin"
+          :label="t('common.admin')"
           color="negative"
           @update:model-value="handleAdminToggle(editUser)"
         />
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancel" color="grey-7" v-close-popup />
-        <q-btn unelevated label="Save" color="indigo-9" @click="saveEditedUser" />
+        <q-btn flat :label="t('common.cancel')" color="grey-7" v-close-popup />
+        <q-btn unelevated :label="t('common.save')" color="indigo-9" @click="saveEditedUser" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -276,6 +276,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave } from 'vue-router'
+import { useLocale } from 'src/i18n'
 
 // Users are loaded/saved through backend API routes.
 import { loadUsers, saveUsers } from 'src/services/storage'
@@ -286,6 +287,7 @@ import { loadUsers, saveUsers } from 'src/services/storage'
  * - $q.dialog() for confirmation popups
  */
 const $q = useQuasar()
+const { t } = useLocale()
 
 /**
  * Search filter for q-table.
@@ -353,11 +355,11 @@ onBeforeRouteLeave(() => {
  * - sortable: enables sorting on header click
  * - sort: custom comparison (French locale, accent-insensitive)
  */
-const columns = [
+const columns = computed(() => [
   {
     name: 'name',
     align: 'left',
-    label: 'User',
+    label: t('users.user'),
     field: 'name',
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
@@ -365,7 +367,7 @@ const columns = [
   {
     name: 'email',
     align: 'left',
-    label: 'Email',
+    label: t('common.email'),
     field: 'email',
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
@@ -373,17 +375,17 @@ const columns = [
   {
     name: 'githubUsername',
     align: 'left',
-    label: 'GitHub',
+    label: t('common.github'),
     field: 'githubUsername',
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
-  { name: 'isAdmin', align: 'center', label: 'Admin', field: 'isAdmin' },
-  { name: 'canEdit', align: 'center', label: 'Can Modify', field: 'canEdit' },
-  { name: 'canValidate', align: 'center', label: 'Can Validate', field: 'canValidate' },
-  { name: 'canPublish', align: 'center', label: 'Can Publish', field: 'canPublish' },
+  { name: 'isAdmin', align: 'center', label: t('common.admin'), field: 'isAdmin' },
+  { name: 'canEdit', align: 'center', label: t('users.canModify'), field: 'canEdit' },
+  { name: 'canValidate', align: 'center', label: t('users.canValidate'), field: 'canValidate' },
+  { name: 'canPublish', align: 'center', label: t('users.canPublish'), field: 'canPublish' },
   { name: 'action', align: 'center', label: '', field: 'action' },
-]
+])
 
 /**
  * Reactive table data and loading state.
@@ -425,7 +427,7 @@ onMounted(async () => {
     users.value = (await loadUsers()).map(normalizeUserEntry)
     hasLoadedUsers.value = true
   } catch (e) {
-    $q.notify({ color: 'negative', message: e?.message || 'Failed to load users' })
+    $q.notify({ color: 'negative', message: e?.message || t('users.loadFailed') })
   } finally {
     loading.value = false
   }
@@ -452,7 +454,7 @@ const persistUsers = (val) => {
       })
       await saveUsers(payload)
     } catch (e) {
-      $q.notify({ color: 'negative', message: e?.message || 'Failed to save users' })
+      $q.notify({ color: 'negative', message: e?.message || t('users.saveFailed') })
     }
   }, 250)
 }
@@ -464,8 +466,8 @@ const persistUsers = (val) => {
  */
 const confirmDelete = (user) => {
   $q.dialog({
-    title: 'Confirm',
-    message: `Would you like to remove ${user.name}?`,
+    title: t('users.confirm'),
+    message: t('users.deleteConfirm', { name: user.name }),
     cancel: true,
     persistent: true,
   }).onOk(() => {
@@ -479,7 +481,7 @@ const deleteUser = (user) => {
 
   $q.notify({
     color: 'positive',
-    message: 'User removed',
+    message: t('users.userRemoved'),
   })
 }
 
@@ -519,7 +521,7 @@ const addUser = () => {
   if (!newUser.value.name || (!newUser.value.email && !newUser.value.githubUsername)) {
     $q.notify({
       color: 'negative',
-      message: 'Name and at least one identity field are required',
+      message: t('users.nameOrIdentityRequired'),
     })
     return
   }
@@ -537,7 +539,7 @@ const addUser = () => {
   if (duplicate) {
     $q.notify({
       color: 'negative',
-      message: 'A user with this email or GitHub username already exists',
+      message: t('users.emailOrGithubExists'),
     })
     return
   }
@@ -565,7 +567,7 @@ const addUser = () => {
 
   $q.notify({
     color: 'positive',
-    message: 'User added',
+    message: t('users.added'),
   })
 }
 
@@ -614,7 +616,7 @@ const saveEditedUser = () => {
   const isAdmin = !!editUser.value.isAdmin
 
   if (!name || (!email && !githubUsername)) {
-    $q.notify({ color: 'negative', message: 'Name and at least one identity field are required' })
+    $q.notify({ color: 'negative', message: t('users.nameOrIdentityRequired') })
     return
   }
 
@@ -629,7 +631,7 @@ const saveEditedUser = () => {
     githubUsername === originalGithubUsername &&
     isAdmin === originalIsAdmin
   ) {
-    $q.notify({ color: 'info', message: 'No changes to save' })
+    $q.notify({ color: 'info', message: t('users.noChanges') })
     showEditUserDialog.value = false
     return
   }
@@ -647,14 +649,14 @@ const saveEditedUser = () => {
   if (duplicate) {
     $q.notify({
       color: 'negative',
-      message: 'A user with this email or GitHub username already exists',
+      message: t('users.emailOrGithubExists'),
     })
     return
   }
 
   const idx = users.value.findIndex((u) => u.identityKey === editUserOriginalKey.value)
   if (idx === -1) {
-    $q.notify({ color: 'negative', message: 'User not found' })
+    $q.notify({ color: 'negative', message: t('users.userNotFound') })
     return
   }
 
@@ -667,7 +669,7 @@ const saveEditedUser = () => {
   })
 
   showEditUserDialog.value = false
-  $q.notify({ color: 'positive', message: 'User updated' })
+  $q.notify({ color: 'positive', message: t('users.userUpdated') })
 }
 
 // --- Notify when permissions change (debounced) ---
@@ -726,7 +728,7 @@ watch(
     if (permToastTimer) clearTimeout(permToastTimer)
     permToastTimer = setTimeout(() => {
       $q.notify({
-        message: 'Permissions updated',
+        message: t('users.permissionsUpdated'),
         color: 'positive',
       })
     }, 250)

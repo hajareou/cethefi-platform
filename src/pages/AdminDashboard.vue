@@ -13,7 +13,7 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Total Documents</div>
+              <div class="text-caption text-grey-7 text-weight-medium">{{ t('common.totalDocuments') }}</div>
               <div class="text-h4 text-weight-bolder text-grey-9">{{ counters.total }}</div>
             </div>
           </q-card-section>
@@ -32,7 +32,7 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Submitted for review</div>
+              <div class="text-caption text-grey-7 text-weight-medium">{{ t('common.submittedForReview') }}</div>
               <div class="text-h4 text-weight-bolder text-grey-9">
                 {{ counters.submitted }}
               </div>
@@ -53,7 +53,7 @@
               font-size="28px"
             />
             <div class="q-ml-md">
-              <div class="text-caption text-grey-7 text-weight-medium">Published</div>
+              <div class="text-caption text-grey-7 text-weight-medium">{{ t('common.published') }}</div>
               <div class="text-h4 text-weight-bolder text-grey-9">{{ counters.published }}</div>
             </div>
           </q-card-section>
@@ -66,9 +66,9 @@
         <!-- Header row: title left, buttons right -->
         <div class="row items-center justify-between q-mb-md">
           <div>
-            <div class="text-h6 text-weight-bold text-grey-9">TEI Documents</div>
+            <div class="text-h6 text-weight-bold text-grey-9">{{ t('dashboard.tableTitle') }}</div>
             <div class="text-caption text-grey-6">
-              Manage and modify theatrical plays from the 18th century
+              {{ t('dashboard.manageSubtitle') }}
             </div>
           </div>
 
@@ -78,7 +78,7 @@
               outline
               no-caps
               :icon="githubIcon"
-              label="Import from GitHub"
+              :label="t('common.importFromGithub')"
               color="grey-8"
               @click="fetchGithubData"
             />
@@ -87,7 +87,7 @@
               unelevated
               no-caps
               icon="add"
-              label="New Document"
+              :label="t('common.newDocument')"
               color="primary"
             />
           </div>
@@ -100,7 +100,7 @@
             dense
             debounce="300"
             v-model="filter"
-            placeholder="Search..."
+            :placeholder="t('common.search')"
             class="q-mb-sm"
           >
             <template v-slot:append>
@@ -109,10 +109,10 @@
           </q-input>
 
           <div class="row items-center q-gutter-md">
-            <q-checkbox v-model="statusFilter.published" label="Published" dense />
-            <q-checkbox v-model="statusFilter.reviewed" label="Reviewed" dense />
-            <q-checkbox v-model="statusFilter.submitted" label="Submitted for review" dense />
-            <q-checkbox v-model="statusFilter.draft" label="Draft" dense />
+            <q-checkbox v-model="statusFilter.published" :label="t('common.published')" dense />
+            <q-checkbox v-model="statusFilter.reviewed" :label="t('common.reviewed')" dense />
+            <q-checkbox v-model="statusFilter.submitted" :label="t('common.submittedForReview')" dense />
+            <q-checkbox v-model="statusFilter.draft" :label="t('common.draft')" dense />
           </div>
         </div>
         <q-table
@@ -171,7 +171,7 @@
                 dense
                 no-caps
                 color="grey-8"
-                label="Modify"
+                :label="t('common.modify')"
                 class="compact-action-btn"
                 @click.stop="editDocument(props.row)"
               />
@@ -187,7 +187,7 @@
                 dense
                 no-caps
                 color="orange-9"
-                label="Submit"
+                :label="t('common.submit')"
                 class="compact-action-btn"
                 @click.stop="submitForReview(props.row)"
               />
@@ -203,7 +203,7 @@
                 dense
                 no-caps
                 color="blue-8"
-                label="Approve"
+                :label="t('common.approve')"
                 class="compact-action-btn"
                 @click.stop="approveToReviewed(props.row)"
               />
@@ -219,7 +219,7 @@
                 no-caps
                 :outline="props.row.status === STATUS.PUBLISHED"
                 :color="props.row.status === STATUS.PUBLISHED ? 'negative' : 'positive'"
-                :label="props.row.status === STATUS.PUBLISHED ? 'Unpublish' : 'Publish'"
+                :label="props.row.status === STATUS.PUBLISHED ? t('common.unpublish') : t('common.publish')"
                 class="compact-action-btn"
                 @click.stop="
                   props.row.status === STATUS.PUBLISHED
@@ -239,7 +239,7 @@
                 dense
                 no-caps
                 color="warning"
-                label="Reject"
+                :label="t('common.reject')"
                 class="compact-action-btn"
                 @click.stop="rejectToDraft(props.row)"
               />
@@ -255,7 +255,7 @@
                 dense
                 no-caps
                 color="negative"
-                label="Delete"
+                :label="t('common.delete')"
                 class="compact-action-btn"
                 @click.stop="confirmDeleteDocument(props.row)"
               />
@@ -270,7 +270,7 @@
               <div>
                 <div class="text-h6">{{ selectedDoc?.title }}</div>
                 <div class="text-caption text-grey-6">
-                  Status: {{ formatStatus(selectedDoc?.status) }}
+                  {{ t('common.status') }}: {{ formatStatus(selectedDoc?.status) }}
                 </div>
               </div>
 
@@ -296,13 +296,13 @@
             <q-card-actions align="between" class="q-pa-md">
               <!-- Guest: show only login CTA -->
               <div v-if="isGuest" class="row items-center justify-between full-width">
-                <div class="text-caption text-grey-6">You are in guest mode. Login to modify.</div>
+                <div class="text-caption text-grey-6">{{ t('dashboard.guestModifyHint') }}</div>
 
                 <q-btn
                   unelevated
                   no-caps
                   color="indigo-9"
-                  label="Login to modify"
+                  :label="t('dashboard.loginToModify')"
                   @click="goToLogin"
                 />
               </div>
@@ -317,7 +317,7 @@
                     outline
                     no-caps
                     icon="send"
-                    label="Submit for review"
+                    :label="t('common.submittedForReview')"
                     color="orange-9"
                     @click="submitForReview(selectedDoc)"
                   />
@@ -326,7 +326,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Modify"
+                    :label="t('common.modify')"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -337,7 +337,7 @@
                     outline
                     no-caps
                     icon="task_alt"
-                    label="Approve"
+                    :label="t('common.approve')"
                     color="blue-8"
                     @click="approveToReviewed(selectedDoc)"
                   />
@@ -346,7 +346,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Modify"
+                    :label="t('common.modify')"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -355,7 +355,7 @@
                     outline
                     no-caps
                     icon="undo"
-                    label="Reject"
+                    :label="t('common.reject')"
                     color="warning"
                     @click="rejectToDraft(selectedDoc)"
                   />
@@ -366,7 +366,7 @@
                     unelevated
                     no-caps
                     icon="publish"
-                    label="Publish"
+                    :label="t('common.publish')"
                     color="positive"
                     @click="publishDocument(selectedDoc)"
                   />
@@ -375,7 +375,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Modify"
+                    :label="t('common.modify')"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -386,7 +386,7 @@
                     outline
                     no-caps
                     icon="visibility_off"
-                    label="Unpublish"
+                    :label="t('common.unpublish')"
                     color="negative"
                     @click="unpublishDocument(selectedDoc)"
                   />
@@ -399,7 +399,7 @@
                   no-caps
                   icon="delete"
                   color="negative"
-                  label="Delete"
+                  :label="t('common.delete')"
                   @click="confirmDeleteDocument(selectedDoc)"
                 />
               </div>
@@ -416,10 +416,12 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 import CETEI from 'CETEIcean'
 
 const authStore = useAuthStore()
+const { t } = useLocale()
 const isGuest = computed(() => authStore.isGuest)
 const grantedPermissions = computed(() =>
   Array.isArray(authStore.permissions) ? authStore.permissions : [],
@@ -487,11 +489,11 @@ onBeforeRouteLeave(() => {
 })
 
 // Table column definitions
-const baseColumns = [
+const getBaseColumns = () => [
   {
     name: 'title',
     align: 'left',
-    label: 'Document Title',
+    label: t('dashboard.title'),
     field: 'title',
     sortable: true,
     classes: 'cell-wrap title-column',
@@ -502,7 +504,7 @@ const baseColumns = [
   {
     name: 'author',
     align: 'left',
-    label: 'Author',
+    label: t('common.author'),
     field: 'author',
     sortable: true,
     classes: 'cell-wrap author-column',
@@ -512,7 +514,7 @@ const baseColumns = [
   },
   {
     name: 'year',
-    label: 'Year',
+    label: t('common.year'),
     field: 'year',
     sortable: true,
     align: 'center',
@@ -522,7 +524,7 @@ const baseColumns = [
   {
     name: 'last_modified',
     align: 'center',
-    label: 'Last Modified',
+    label: t('dashboard.lastModified'),
     field: 'lastModified',
     sortable: true,
     style: 'width: 132px; max-width: 132px',
@@ -532,14 +534,12 @@ const baseColumns = [
   {
     name: 'status',
     align: 'center',
-    label: 'Status',
+    label: t('common.status'),
     field: 'status',
     style: 'width: 172px; max-width: 172px',
     headerStyle: 'width: 172px; max-width: 172px',
   },
 ]
-
-const guestColumns = [...baseColumns]
 
 const makeActionColumn = (name, label, width = 100) => ({
   name,
@@ -552,24 +552,25 @@ const makeActionColumn = (name, label, width = 100) => ({
 })
 
 const columns = computed(() => {
-  if (isGuest.value) return guestColumns
+  const baseColumns = getBaseColumns()
+  if (isGuest.value) return baseColumns
   if (!canUseActions.value) return baseColumns
 
   const actionColumns = []
 
   if (canEdit.value) {
-    actionColumns.push(makeActionColumn('edit', 'Modify', 90))
-    actionColumns.push(makeActionColumn('submit', 'Submit', 100))
+    actionColumns.push(makeActionColumn('edit', t('common.modify'), 90))
+    actionColumns.push(makeActionColumn('submit', t('common.submit'), 100))
   }
 
   if (canValidate.value) {
-    actionColumns.push(makeActionColumn('approve', 'Approve', 104))
-    actionColumns.push(makeActionColumn('reject', 'Reject', 96))
+    actionColumns.push(makeActionColumn('approve', t('common.approve'), 104))
+    actionColumns.push(makeActionColumn('reject', t('common.reject'), 96))
   }
 
   if (canPublish.value) {
-    actionColumns.push(makeActionColumn('publish', 'Publish', 112))
-    actionColumns.push(makeActionColumn('delete', 'Delete', 92))
+    actionColumns.push(makeActionColumn('publish', t('common.publish'), 112))
+    actionColumns.push(makeActionColumn('delete', t('common.delete'), 92))
   }
 
   return [...baseColumns, ...actionColumns]
@@ -593,10 +594,11 @@ const counters = computed(() => {
   Converts internal status to display label
 */
 const formatStatus = (status) => {
-  if (!status) return 'Unknown'
-  if (status === STATUS.DRAFT) return 'Draft'
-  if (status === STATUS.REVIEWED) return 'Reviewed'
-  if (status === STATUS.PUBLISHED) return 'Published'
+  if (!status) return t('dashboard.statusUnknown')
+  if (status === STATUS.DRAFT) return t('common.draft')
+  if (status === STATUS.REVIEWED) return t('common.reviewed')
+  if (status === STATUS.PUBLISHED) return t('common.published')
+  if (status === STATUS.SUBMITTED) return t('common.submittedForReview')
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
 
@@ -644,7 +646,7 @@ const canRowDelete = () => canPublish.value
 
 const getShortAuthor = (author) => {
   const normalized = String(author ?? '').trim()
-  if (!normalized) return '...'
+  if (!normalized) return t('dashboard.authorUnknown')
   if (normalized.length <= 3) return normalized
   return `${normalized.slice(0, 3)}...`
 }
@@ -751,7 +753,7 @@ async function fetchGithubData() {
         }
 
         // Author: ONLY from TEI
-        row.author = meta?.author?.trim() ? meta.author.trim() : 'Unknown'
+        row.author = meta?.author?.trim() ? meta.author.trim() : t('dashboard.authorUnknown')
       } catch (e) {
         // If TEI fetch/parse fails, keep existing values
         console.warn('Failed to read TEI meta for', row._path, e)
@@ -785,7 +787,7 @@ const submitForReview = (doc) => {
   saveDocOverride(doc)
   showNotify({
     color: 'info',
-    message: 'Submitted for review',
+    message: t('dashboard.submittedMessage'),
     icon: 'send',
   })
 }
@@ -796,7 +798,7 @@ const rejectToDraft = (doc) => {
   saveDocOverride(doc)
   showNotify({
     color: 'warning',
-    message: 'Rejected. Sent back to draft',
+    message: t('dashboard.rejectedMessage'),
     icon: 'undo',
   })
 }
@@ -807,7 +809,7 @@ const approveToReviewed = (doc) => {
   saveDocOverride(doc)
   showNotify({
     color: 'positive',
-    message: 'Document approved',
+    message: t('dashboard.approveDocument'),
     icon: 'send',
   })
 }
@@ -818,7 +820,7 @@ const publishDocument = (doc) => {
   saveDocOverride(doc)
   showNotify({
     color: 'positive',
-    message: 'Document published',
+    message: t('dashboard.publishedMessage'),
     icon: 'send',
   })
 }
@@ -829,7 +831,7 @@ const unpublishDocument = (doc) => {
   saveDocOverride(doc)
   showNotify({
     color: 'warning',
-    message: 'Document unpublished',
+    message: t('dashboard.unpublishedMessage'),
     icon: 'undo',
   })
 }
@@ -863,7 +865,7 @@ const closeDocViewer = () => {
 const editDocument = (doc) => {
   if (!canEdit.value) return
   if (!doc?._path) {
-    $q.notify({ color: 'negative', message: 'No file path available for this document' })
+    $q.notify({ color: 'negative', message: t('dashboard.filePathMissing') })
     return
   }
 
@@ -873,7 +875,7 @@ const editDocument = (doc) => {
   const path = segments.join('/')
 
   if (!filename) {
-    $q.notify({ color: 'negative', message: 'Invalid document path' })
+    $q.notify({ color: 'negative', message: t('dashboard.invalidDocumentPath') })
     return
   }
 
@@ -897,8 +899,8 @@ const editDocument = (doc) => {
 const confirmDeleteDocument = (doc) => {
   if (!canPublish.value) return
   $q.dialog({
-    title: 'Confirm deletion',
-    message: `Are you sure you want to delete "${doc.title}"?`,
+    title: t('dashboard.deleteConfirmTitle'),
+    message: t('dashboard.deleteConfirm', { title: doc.title }),
     cancel: true,
     persistent: true,
   }).onOk(() => {
@@ -920,7 +922,7 @@ const deleteDocument = (doc) => {
 
   $q.notify({
     color: 'negative',
-    message: 'Document deleted',
+    message: t('dashboard.deleted'),
   })
 }
 
@@ -1003,7 +1005,7 @@ const cetei = new CETEI()
 
 const openDocViewer = async (doc) => {
   if (!doc?._path) {
-    $q.notify({ color: 'negative', message: 'No file path available for this document' })
+    $q.notify({ color: 'negative', message: t('dashboard.noFilePath') })
     return
   }
 
@@ -1031,7 +1033,7 @@ const openDocViewer = async (doc) => {
     const dom = await cetei.makeHTML5(docText.value)
     if (teiContainer.value) teiContainer.value.appendChild(dom)
   } catch (e) {
-    $q.notify({ color: 'negative', message: e?.message || 'Failed to load document' })
+    $q.notify({ color: 'negative', message: e?.message || t('dashboard.loadFailed') })
   } finally {
     docLoading.value = false
   }
