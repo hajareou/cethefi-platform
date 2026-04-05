@@ -67,6 +67,7 @@ const plugins = [
     webpackEnv: {
       NODE_ENV: JSON.stringify(process.env.NODE_ENV),
       WORKER_ENV: JSON.stringify(process.env.WORKER_ENV),
+      ROUTER_BASE: JSON.stringify(process.env.ROUTER_BASE || '/'),
     },
   }),
   new webpack.ProvidePlugin({ process: 'process/browser' }),

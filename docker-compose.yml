@@ -21,6 +21,8 @@ services:
     build:
       context: ./leafwriter
       dockerfile: Dockerfile
+      args:
+        - ROUTER_BASE=/tei
     environment:
       - AUTH_API_URL=${BACKEND_PUBLIC_URL:-http://localhost:8091}
       - KEYCLOAK_URL=

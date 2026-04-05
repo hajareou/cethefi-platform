@@ -7,6 +7,7 @@ export * from './assert';
 export declare var webpackEnv: {
   NODE_ENV: string;
   WORKER_ENV: string;
+  ROUTER_BASE: string;
 };
 
 export type PaletteMode = 'light' | 'dark' | 'system';

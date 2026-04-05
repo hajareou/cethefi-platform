@@ -31,7 +31,7 @@ const root = createRoot(container);
 root.render(
   <Provider value={overmind}>
     <HelmetProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={webpackEnv.ROUTER_BASE}>
         <App />
       </BrowserRouter>
     </HelmetProvider>

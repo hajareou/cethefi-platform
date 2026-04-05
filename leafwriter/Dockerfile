@@ -13,6 +13,8 @@ RUN \
   if [ -f package-lock.json ]; then npm ci; \
   else npm install; \
   fi
+ARG ROUTER_BASE=/
+ENV ROUTER_BASE=$ROUTER_BASE
 ENV NODE_ENV=production
 RUN NODE_OPTIONS=--max_old_space_size=4096 npm run build-commons
 EXPOSE 3000
