@@ -7,19 +7,30 @@
           dense
           round
           icon="menu"
-          aria-label="Menu"
+          :aria-label="t('common.menu')"
           @click="toggleLeftDrawer"
           class="lt-md q-mr-sm"
         />
 
         <q-space />
 
+        <q-btn-dropdown flat no-caps dense color="grey-8" :label="locale.toUpperCase()">
+          <q-list style="min-width: 140px">
+            <q-item clickable v-close-popup @click="setLocale('en')">
+              <q-item-section>{{ t('common.english') }}</q-item-section>
+            </q-item>
+            <q-item clickable v-close-popup @click="setLocale('fr')">
+              <q-item-section>{{ t('common.french') }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+
         <!-- If user is guest: show login button -->
         <q-btn
           v-if="isGuest"
           unelevated
           no-caps
-          label="Login"
+          :label="t('common.login')"
           color="indigo-9"
           @click="goToLogin"
         />
@@ -45,14 +56,14 @@
                 <q-item-section avatar>
                   <q-icon name="edit" />
                 </q-item-section>
-                <q-item-section>Edit</q-item-section>
+                <q-item-section>{{ t('common.modify') }}</q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup @click="logout">
                 <q-item-section avatar>
                   <q-icon name="logout" />
                 </q-item-section>
-                <q-item-section>Log out</q-item-section>
+                <q-item-section>{{ t('common.logout') }}</q-item-section>
               </q-item>
             </q-list>
           </q-menu>
@@ -81,21 +92,23 @@
           <q-item
             clickable
             v-ripple
-            to="/dashboard"
+            @click="navigateTo('/dashboard')"
             active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
-            <q-item-section class="text-weight-medium text-size-16"> Dashboard </q-item-section>
+            <q-item-section class="text-weight-medium text-size-16">
+              {{ t('common.dashboard') }}
+            </q-item-section>
           </q-item>
 
           <q-item
             v-if="!isGuest && canManageUsers"
             clickable
             v-ripple
-            to="/users"
+            @click="navigateTo('/users')"
             active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
@@ -103,7 +116,7 @@
               <q-icon name="group" />
             </q-item-section>
             <q-item-section class="text-weight-medium text-size-16">
-              User Management
+              {{ t('common.userManagement') }}
             </q-item-section>
           </q-item>
           <q-separator />
@@ -119,7 +132,7 @@
               <q-icon name="open_in_new" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>GitHub Repository</q-item-label>
+              <q-item-label>{{ t('common.githubRepository') }}</q-item-label>
             </q-item-section>
           </q-item>
 
@@ -128,7 +141,7 @@
               <q-icon name="public" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Cethefi Website</q-item-label>
+              <q-item-label>{{ t('layout.cethefiWebsite') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -145,16 +158,16 @@
     <q-dialog v-if="!isGuest" v-model="showEditDialog" persistent>
       <q-card style="min-width: 360px">
         <q-card-section>
-          <div class="text-h6">Edit profile</div>
+          <div class="text-h6">{{ t('layout.modifyProfile') }}</div>
         </q-card-section>
 
         <q-card-section class="q-gutter-md">
-          <q-input v-model="editName" label="Name" outlined dense />
+          <q-input v-model="editName" :label="t('common.name')" outlined dense />
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
-          <q-btn unelevated label="Save" color="indigo-9" @click="saveProfile" />
+          <q-btn flat :label="t('common.cancel')" color="grey-7" v-close-popup />
+          <q-btn unelevated :label="t('common.save')" color="indigo-9" @click="saveProfile" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -165,11 +178,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
+import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
+const { locale, setLocale, t } = useLocale()
 
 onMounted(() => {
   authStore.verifyToken()
@@ -189,6 +204,13 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
+function navigateTo(path) {
+  if ($q.screen.lt.md) {
+    leftDrawerOpen.value = false
+  }
+  router.push(path)
+}
+
 const user = computed(() => authStore.user)
 
 const avatarUrl = computed(() => user.value?.avatarUrl || null)
@@ -201,7 +223,7 @@ const initials = computed(() => {
   return (first + last).toUpperCase() || '?'
 })
 
-// Edit dialog state
+// Modify dialog state
 const showEditDialog = ref(false)
 const editName = ref('')
 
@@ -213,7 +235,7 @@ const openEditDialog = () => {
 const saveProfile = () => {
   const name = editName.value.trim()
   if (!name) {
-    $q.notify({ color: 'negative', message: 'Name cannot be empty' })
+    $q.notify({ color: 'negative', message: t('layout.nameCannotBeEmpty') })
     return
   }
 
@@ -221,7 +243,7 @@ const saveProfile = () => {
 
   showEditDialog.value = false
 
-  $q.notify({ color: 'positive', message: 'Profile updated' })
+  $q.notify({ color: 'positive', message: t('layout.profileUpdated') })
 }
 
 const logout = async () => {
