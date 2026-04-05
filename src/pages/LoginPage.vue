@@ -10,7 +10,7 @@
           <div class="text-h5 text-weight-bold text-grey-9 q-mb-sm">Welcome to CETHEFI</div>
 
           <div class="text-body2 text-grey-7 q-mb-lg">
-            Manage and edit theatrical plays from the 18th century
+            Manage and modify theatrical plays from the 18th century
           </div>
 
           <div class="column q-gutter-sm">
@@ -36,7 +36,7 @@
           </div>
 
           <div class="text-caption text-grey-6 q-mt-md">
-            Guest mode lets you explore the interface. Editing and publishing may be restricted.
+            Guest mode lets you explore the interface. Modifying and publishing may be restricted.
           </div>
         </q-card-section>
       </q-card>

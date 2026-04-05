@@ -45,7 +45,7 @@
                 <q-item-section avatar>
                   <q-icon name="edit" />
                 </q-item-section>
-                <q-item-section>Edit</q-item-section>
+                <q-item-section>Modify</q-item-section>
               </q-item>
 
               <q-item clickable v-close-popup @click="logout">
@@ -81,7 +81,7 @@
           <q-item
             clickable
             v-ripple
-            to="/dashboard"
+            @click="navigateTo('/dashboard')"
             active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
@@ -95,7 +95,7 @@
             v-if="!isGuest && canManageUsers"
             clickable
             v-ripple
-            to="/users"
+            @click="navigateTo('/users')"
             active-class="bg-indigo-9 text-white shadow-3"
             class="q-mb-sm rounded-borders"
           >
@@ -145,7 +145,7 @@
     <q-dialog v-if="!isGuest" v-model="showEditDialog" persistent>
       <q-card style="min-width: 360px">
         <q-card-section>
-          <div class="text-h6">Edit profile</div>
+          <div class="text-h6">Modify profile</div>
         </q-card-section>
 
         <q-card-section class="q-gutter-md">
@@ -189,6 +189,11 @@ function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
+function navigateTo(path) {
+  leftDrawerOpen.value = false
+  router.push(path)
+}
+
 const user = computed(() => authStore.user)
 
 const avatarUrl = computed(() => user.value?.avatarUrl || null)
@@ -201,7 +206,7 @@ const initials = computed(() => {
   return (first + last).toUpperCase() || '?'
 })
 
-// Edit dialog state
+// Modify dialog state
 const showEditDialog = ref(false)
 const editName = ref('')
 

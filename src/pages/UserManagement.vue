@@ -45,7 +45,7 @@
             <!-- Permission filters (like document status filters) -->
             <div class="row items-center q-gutter-md">
               <q-checkbox v-model="permFilter.isAdmin" label="Admin" dense />
-              <q-checkbox v-model="permFilter.canEdit" label="Can edit" dense />
+              <q-checkbox v-model="permFilter.canEdit" label="Can modify" dense />
               <q-checkbox v-model="permFilter.canValidate" label="Can validate" dense />
               <q-checkbox v-model="permFilter.canPublish" label="Can publish" dense />
             </div>
@@ -133,12 +133,12 @@
                 <q-menu>
                   <q-list style="min-width: 160px">
 
-                    <!-- Edit -->
+                    <!-- Modify -->
                     <q-item clickable v-close-popup @click="openEditUser(props.row)">
                       <q-item-section avatar>
                         <q-icon name="edit" />
                       </q-item-section>
-                      <q-item-section>Edit</q-item-section>
+                      <q-item-section>Modify</q-item-section>
                     </q-item>
 
                     <q-separator />
@@ -210,7 +210,7 @@
             />
           </div>
           <div class="col">
-            <q-checkbox v-model="newUser.canEdit" label="Can edit" :disable="newUser.isAdmin" />
+            <q-checkbox v-model="newUser.canEdit" label="Can modify" :disable="newUser.isAdmin" />
           </div>
           <div class="col">
             <q-checkbox
@@ -239,11 +239,11 @@
     </q-card>
   </q-dialog>
 
-  <!-- ===== Edit User Dialog ===== -->
+  <!-- ===== Modify User Dialog ===== -->
   <q-dialog v-model="showEditUserDialog" persistent>
     <q-card style="min-width: 420px">
       <q-card-section>
-        <div class="text-h6">Edit user</div>
+        <div class="text-h6">Modify user</div>
       </q-card-section>
 
       <q-card-section class="q-gutter-md">
@@ -379,7 +379,7 @@ const columns = [
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
   { name: 'isAdmin', align: 'center', label: 'Admin', field: 'isAdmin' },
-  { name: 'canEdit', align: 'center', label: 'Can Edit', field: 'canEdit' },
+  { name: 'canEdit', align: 'center', label: 'Can Modify', field: 'canEdit' },
   { name: 'canValidate', align: 'center', label: 'Can Validate', field: 'canValidate' },
   { name: 'canPublish', align: 'center', label: 'Can Publish', field: 'canPublish' },
   { name: 'action', align: 'center', label: '', field: 'action' },
@@ -569,7 +569,7 @@ const addUser = () => {
   })
 }
 
-// Edit user dialogue 
+// Modify user dialogue 
 const showEditUserDialog = ref(false)
 
 // keep track of which user is being edited

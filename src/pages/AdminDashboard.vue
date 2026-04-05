@@ -68,7 +68,7 @@
           <div>
             <div class="text-h6 text-weight-bold text-grey-9">TEI Documents</div>
             <div class="text-caption text-grey-6">
-              Manage and edit theatrical plays from the 18th century
+              Manage and modify theatrical plays from the 18th century
             </div>
           </div>
 
@@ -171,7 +171,7 @@
                 dense
                 no-caps
                 color="grey-8"
-                label="Edit"
+                label="Modify"
                 class="compact-action-btn"
                 @click.stop="editDocument(props.row)"
               />
@@ -296,13 +296,13 @@
             <q-card-actions align="between" class="q-pa-md">
               <!-- Guest: show only login CTA -->
               <div v-if="isGuest" class="row items-center justify-between full-width">
-                <div class="text-caption text-grey-6">You are in guest mode. Login to edit.</div>
+                <div class="text-caption text-grey-6">You are in guest mode. Login to modify.</div>
 
                 <q-btn
                   unelevated
                   no-caps
                   color="indigo-9"
-                  label="Login to edit"
+                  label="Login to modify"
                   @click="goToLogin"
                 />
               </div>
@@ -326,7 +326,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Edit"
+                    label="Modify"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -346,7 +346,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Edit"
+                    label="Modify"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -375,7 +375,7 @@
                     outline
                     no-caps
                     icon="edit"
-                    label="Edit"
+                    label="Modify"
                     color="grey-8"
                     @click="editDocument(selectedDoc)"
                   />
@@ -558,7 +558,7 @@ const columns = computed(() => {
   const actionColumns = []
 
   if (canEdit.value) {
-    actionColumns.push(makeActionColumn('edit', 'Edit', 90))
+    actionColumns.push(makeActionColumn('edit', 'Modify', 90))
     actionColumns.push(makeActionColumn('submit', 'Submit', 100))
   }
 
