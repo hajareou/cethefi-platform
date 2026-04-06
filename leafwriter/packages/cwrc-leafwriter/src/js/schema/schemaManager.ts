@@ -7,6 +7,20 @@ import Writer from '../Writer';
 import Mapper from './mapper';
 import * as schemaNavigator from './schemaNavigator';
 
+export const DRACOR_SCHEMA_ID = 'dracor';
+export const DRACOR_SCHEMA_URL = 'https://dracor.org/schema.rng';
+
+const normalizeSchemaUrl = (url: string) => {
+  const normalized = url.trim();
+
+  try {
+    const parsedUrl = new URL(normalized, window.location.origin);
+    return `${parsedUrl.host}${parsedUrl.pathname}`.replace(/^\/+/, '');
+  } catch {
+    return normalized.replace(/^\.?\/*/, '');
+  }
+};
+
 /**
  * @class SchemaManager
  * @param {Writer} writer
@@ -125,6 +139,10 @@ class SchemaManager {
     return this.schemas.find((schema) => schema.id === this.schemaId);
   }
 
+  getSchema(schemaId: string) {
+    return this.schemas.find((schema) => schema.id === schemaId);
+  }
+
   /**
    * It takes a root and returns the schemaId that is associated with a specific root
    * @param {string} root - The root of the schema you want to get the ID of.
@@ -174,12 +192,17 @@ class SchemaManager {
    * @returns {String|undefined} The schemaId
    */
   getSchemaIdFromUrl(url: string) {
-    // remove the protocol in order to disregard http/https for improved chances of matching below
-    const urlNoProtocol = url.split(/^.*?\/\//)[1] ?? '';
+    const normalizedUrl = normalizeSchemaUrl(url);
+    if (!normalizedUrl) return;
+
+    // Recognize known external schema declarations that we intentionally mirror locally.
+    if (normalizedUrl === 'dracor.org/schema.rng' || normalizedUrl.endsWith('assets/schemas/dracor.rng')) {
+      return DRACOR_SCHEMA_ID;
+    }
 
     // search the known schemas, if the url matches it must be the same one
     const schema = this.schemas.find((schema) => {
-      const match = schema.rng.find((url) => url.includes(urlNoProtocol));
+      const match = schema.rng.find((candidateUrl) => normalizeSchemaUrl(candidateUrl) === normalizedUrl);
       if (match) return schema;
     });
 
@@ -231,6 +254,16 @@ class SchemaManager {
   }
 
   setDocumentSchemaUrl(url: string) {
+    const schemaId = this.getSchemaIdFromUrl(url);
+    const schemaEntry = this.getSchema(schemaId);
+
+    if (schemaEntry) {
+      // Keep a canonical schema URL in the document so exports remain interoperable,
+      // while loadSchemaFile can still prefer a local mirror when available.
+      this.documentSchemaUrl = this.getPreferredDocumentSchemaUrl(schemaEntry, url);
+      return;
+    }
+
     this.documentSchemaUrl = url;
   }
 
@@ -574,10 +607,22 @@ class SchemaManager {
    * @returns {Document} The XML
    */
   private async loadSchemaFile(urls: string[]) {
-    // prioritize the document schema
-    if (this.documentSchemaUrl && !urls.includes(this.documentSchemaUrl)) {
-      urls = [this.documentSchemaUrl, ...urls];
+    const candidates = new Set<string>();
+
+    if (this.documentSchemaUrl) {
+      const documentSchemaId = this.getSchemaIdFromUrl(this.documentSchemaUrl);
+      const documentSchemaEntry = documentSchemaId ? this.getSchema(documentSchemaId) : undefined;
+
+      if (documentSchemaEntry) {
+        documentSchemaEntry.rng.forEach((url) => candidates.add(url));
+      } else {
+        candidates.add(this.documentSchemaUrl);
+      }
     }
+
+    urls.forEach((url) => candidates.add(url));
+
+    urls = Array.from(candidates).sort((a, b) => this.getSchemaUrlPriority(a) - this.getSchemaUrlPriority(b));
 
     let isAltRoute = false;
 
@@ -608,11 +653,44 @@ class SchemaManager {
 
       // Convert to XML
       const xml = this.writer.utilities.stringToXML(data);
+      if (!xml) {
+        log.warn(`schemaManager.loadSchemaFile: invalid XML returned by ${url}`);
+        isAltRoute = true;
+        continue;
+      }
+
       this.rng = url;
       return xml;
     }
 
     return;
+  }
+
+  private getSchemaUrlPriority(url: string) {
+    if (url.startsWith('./') || url.startsWith('/')) return 0;
+
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      return parsedUrl.origin === window.location.origin ? 0 : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  private getPreferredDocumentSchemaUrl(schemaEntry: Schema, fallbackUrl: string) {
+    if (schemaEntry.id === DRACOR_SCHEMA_ID) {
+      return DRACOR_SCHEMA_URL;
+    }
+
+    if (this.getSchemaUrlPriority(fallbackUrl) > 0) {
+      return fallbackUrl;
+    }
+
+    const preferredRemoteUrl = schemaEntry.rng.find(
+      (candidate) => this.getSchemaUrlPriority(candidate) > 0,
+    );
+
+    return preferredRemoteUrl ?? fallbackUrl;
   }
 
   /**
