@@ -4,6 +4,20 @@ import { SchemaMappings } from '../types';
 import { isValidHttpURL } from '../utilities';
 import { schemas as defaultSchemas } from './schemas';
 
+const isValidSchemaResourceUrl = (url: string) => {
+  if (isValidHttpURL(url)) return true;
+
+  if (url.startsWith('/')) return true;
+  if (url.startsWith('./')) return true;
+
+  try {
+    const parsedUrl = new URL(url, window.location.origin);
+    return parsedUrl.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
 export const createConfig = async (settings: LeafWriterOptionsSettings = {}) => {
   const { baseUrl, readonly, schemas: configSchemas } = settings;
   const supportedSchemas = configSchemas ? [...configSchemas, ...defaultSchemas] : defaultSchemas;
@@ -48,10 +62,10 @@ export const setupSchemas = async (schemas: Schema[]) => {
     if (!name || typeof name !== 'string' || name.length < 3 || name.length > 20) continue;
     if (!mapping || !SchemaMappings.includes(mapping)) continue;
 
-    const validRng = rng.filter((url) => isValidHttpURL(url));
+    const validRng = rng.filter((url) => isValidSchemaResourceUrl(url));
     if (validRng.length === 0) continue;
 
-    const validCss = css.filter((url) => isValidHttpURL(url));
+    const validCss = css.filter((url) => isValidSchemaResourceUrl(url));
     if (validCss.length === 0) continue;
 
     supportedSchemas = [

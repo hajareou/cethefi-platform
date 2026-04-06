@@ -57,7 +57,13 @@ export interface LeafWriterOptionsSettings {
   allowOverlap?: boolean;
 }
 
-export type SupportedSchemasId = 'orlando' | 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei';
+export type SupportedSchemasId =
+  | 'orlando'
+  | 'teiAll'
+  | 'teiLite'
+  | 'teiSimplePrint'
+  | 'jTei'
+  | 'dracor';
 
 interface ISettingsModules {
   west: ISettingsModulesPanel[];

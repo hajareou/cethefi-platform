@@ -3,6 +3,7 @@ import { log } from '../../utilities';
 import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
+import { DRACOR_SCHEMA_ID, DRACOR_SCHEMA_URL } from '../schema/schemaManager';
 import Writer from '../Writer';
 import { openEditorModeDialog, openProcessIssueDialog, type ProcessSchemaProps } from './prompts';
 
@@ -59,13 +60,22 @@ class XML2CWRC {
     // * HAS SCHEMA?
     schemaProcess.docSchema = this.getSchemaUrls(doc);
     schemaProcess.schemaFound = !!schemaProcess.docSchema.rng;
-    if (!schemaProcess.schemaFound || !schemaProcess.docSchema.rng)
+    if (!schemaProcess.schemaFound || !schemaProcess.docSchema.rng) {
+      const dracorLoaded = await this.tryLoadDracorSchema(doc, schemaProcess, 'missing');
+      if (dracorLoaded) return;
+
       return openProcessIssueDialog(schemaProcess);
+    }
 
     // * IS SCHEMA SUPPORTED?
     schemaProcess.schemaId = schemaManager.getSchemaIdFromUrl(schemaProcess.docSchema.rng);
     schemaProcess.schemaSupported = !!schemaProcess.schemaId;
-    if (!schemaProcess.schemaSupported) return openProcessIssueDialog(schemaProcess);
+    if (!schemaProcess.schemaSupported) {
+      const dracorLoaded = await this.tryLoadDracorSchema(doc, schemaProcess, 'unsupported');
+      if (dracorLoaded) return;
+
+      return openProcessIssueDialog(schemaProcess);
+    }
 
     schemaManager.setDocumentSchemaUrl(schemaProcess.docSchema.rng);
     if (schemaProcess.docSchema.css) schemaManager.setDocumentCssUrl(schemaProcess.docSchema.css);
@@ -78,6 +88,9 @@ class XML2CWRC {
 
       // * IS SCHEMA LOADED
       if (!schemaProcess.schemaLoaded) {
+        const dracorLoaded = await this.tryLoadDracorSchema(doc, schemaProcess, 'loadFailed');
+        if (dracorLoaded) return;
+
         openProcessIssueDialog(schemaProcess);
         return;
       }
@@ -94,6 +107,48 @@ class XML2CWRC {
     }
 
     this.doProcessing(schemaProcess.doc);
+  }
+
+  private async tryLoadDracorSchema(
+    doc: XMLDocument,
+    schemaProcess: ProcessSchemaProps,
+    reason: 'missing' | 'unsupported' | 'loadFailed',
+  ) {
+    const { schemaManager } = this.writer;
+
+    if (schemaProcess.rootName !== 'TEI') return false;
+
+    const declaredSchemaUrl = schemaProcess.docSchema?.rng;
+    const declaredSchemaId = declaredSchemaUrl
+      ? schemaManager.getSchemaIdFromUrl(declaredSchemaUrl)
+      : undefined;
+    const hasExplicitDracorDeclaration =
+      declaredSchemaUrl === DRACOR_SCHEMA_URL || declaredSchemaId === DRACOR_SCHEMA_ID;
+
+    // Be conservative: only auto-apply DraCor when there is no declared schema at all,
+    // or when the document explicitly declares DraCor but the usual load path failed.
+    if (reason !== 'missing' && !hasExplicitDracorDeclaration) return false;
+
+    const dracorSchema = schemaManager.getSchema(DRACOR_SCHEMA_ID);
+    if (!dracorSchema) return false;
+
+    schemaProcess.schemaId = DRACOR_SCHEMA_ID;
+    schemaProcess.schemaFound = true;
+    schemaProcess.schemaSupported = true;
+    schemaProcess.selectedSchema = dracorSchema;
+
+    schemaManager.setDocumentSchemaUrl(DRACOR_SCHEMA_URL);
+
+    const schemaLoaded = await schemaManager.loadSchema(DRACOR_SCHEMA_ID);
+    schemaProcess.schemaLoaded = schemaLoaded;
+
+    if (!schemaLoaded) return false;
+
+    const css = schemaManager.getCss();
+    if (css) schemaManager.setDocumentCssUrl(css);
+
+    this.doProcessing(doc);
+    return true;
   }
 
   /**
