@@ -6,26 +6,15 @@ const envs = {
 
 module.exports = {
   // ========== LOCAL DEV ==========
-  // development: {
-  //   ...envs,
-  //   AUTH_API_URL: 'http://localhost:8091',
-  //   NODE_ENV: 'development',
-  //   WORKER_ENV: 'production',
-  // },
-  // ========== PUBLISH TO VM ==========
   development: {
     ...envs,
-    AUTH_API_URL: 'https://auth-api.dev.lincsproject.ca',
+    AUTH_API_URL: 'http://localhost:8091',
     NODE_ENV: 'development',
     WORKER_ENV: 'production',
   },
-  ...envs,
-  'development-worker-dev': {
-    NODE_ENV: 'development',
-    WORKER_ENV: 'development',
-  },
-  ...envs,
+  // ========== PUBLISH TO VM ==========
   production: {
+    ...envs,
     NODE_ENV: 'production',
     WORKER_ENV: 'production',
   },
