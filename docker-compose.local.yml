@@ -3,7 +3,7 @@
 #   podman-compose -f docker-compose.yml -f docker-compose.local.yml build
 #   podman-compose -f docker-compose.yml -f docker-compose.local.yml up -d
 
-version: "3.9"
+version: '3.9'
 
 services:
   backend:
@@ -19,5 +19,5 @@ services:
       args:
         - ROUTER_BASE=/
     environment:
-      - AUTH_API_URL=http://backend:8091
+      # - AUTH_API_URL=http://backend:8091
       - KEYCLOAK_URL=
