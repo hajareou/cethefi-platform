@@ -2,11 +2,13 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
+import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
+const { t } = useLocale()
 const API = import.meta.env.VITE_AUTH_API_BASE_URL
 
 onMounted(async () => {
@@ -37,11 +39,11 @@ onMounted(async () => {
   } catch {
     $q.notify({
       color: 'negative',
-      message: 'Impossible de finaliser la connexion. Vérifiez que le backend est démarré.',
+      message: t('auth.callbackError'),
     })
     router.replace('/login')
   }
 })
 </script>
 
-<template><div class="q-pa-md">Connexion en cours...</div></template>
+<template><div class="q-pa-md">{{ t('auth.signingIn') }}</div></template>

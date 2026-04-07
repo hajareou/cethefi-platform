@@ -2,6 +2,18 @@ import type { Types } from '@cwrc/leafwriter';
 
 const isLocalDev = window.location.origin === 'http://localhost:3000';
 
+const dracorSchema: Types.Schema = {
+  id: 'dracor',
+  name: 'DraCor',
+  mapping: 'tei',
+  rng: [
+    `${window.location.origin}/assets/schemas/dracor.rng`,
+    '/assets/schemas/dracor.rng',
+    './assets/schemas/dracor.rng',
+  ],
+  css: ['https://cwrc.ca/templates/css/tei.css'],
+};
+
 export const schemas: Types.Schema[] = isLocalDev
   ? [
       {
@@ -53,5 +65,6 @@ export const schemas: Types.Schema[] = isLocalDev
         ],
         css: ['https://cwrc.ca/templates/css/tei.css'],
       },
+      dracorSchema,
     ]
-  : [];
+  : [dracorSchema];
