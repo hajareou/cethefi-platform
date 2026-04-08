@@ -211,6 +211,21 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-notes="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                flat
+                dense
+                round
+                color="grey-7"
+                icon="sticky_note_2"
+                @click.stop="openNotes(props.row)"
+              >
+                <q-tooltip>{{ t('common.notes') }}</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-reject="props">
             <q-td :props="props" class="text-center">
               <q-btn
@@ -363,6 +378,47 @@
                   />
                 </div>
               </div>
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
+        <q-dialog v-model="showNotesDialog">
+          <q-card style="width: 700px; max-width: 90vw">
+            <q-card-section class="row items-center justify-between">
+              <div class="text-h6">{{ notesDoc?.title }}</div>
+              <q-btn flat round icon="close" v-close-popup />
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-section>
+              <q-input
+                v-model="notesText"
+                type="textarea"
+                autogrow
+                outlined
+                class="full-width"
+              />
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-actions align="right" class="q-pa-md">
+              <q-btn
+                outline
+                dense
+                no-caps
+                color="grey-8"
+                :label="t('common.close')"
+                v-close-popup
+              />
+              <q-btn
+                dense
+                no-caps
+                color="primary"
+                class="compact-action-btn"
+                :label="t('common.save')"
+                @click="saveNotes"
+              />
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -527,6 +583,8 @@ const columns = computed(() => {
   if (canPublish.value) {
     actionColumns.push(makeActionColumn('publish', t('common.publish'), 112))
   }
+
+  actionColumns.push(makeActionColumn('notes', t('common.notes'), 72))
 
   return [...baseColumns, ...actionColumns]
 })
@@ -902,6 +960,46 @@ const openDocViewer = async (doc) => {
   } finally {
     docLoading.value = false
   }
+}
+
+const DOC_NOTES_KEY = 'docNotes'
+
+const showNotesDialog = ref(false)
+const notesDoc = ref(null)
+const notesText = ref('')
+
+const loadNotesMap = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DOC_NOTES_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+const saveNotesMap = (notesMap) => {
+  localStorage.setItem(DOC_NOTES_KEY, JSON.stringify(notesMap))
+}
+
+const openNotes = (row) => {
+  notesDoc.value = row
+  const notesMap = loadNotesMap()
+  notesText.value = notesMap[row.id] || ''
+  showNotesDialog.value = true
+}
+
+const saveNotes = () => {
+  if (!notesDoc.value) return
+
+  const notesMap = loadNotesMap()
+  notesMap[notesDoc.value.id] = notesText.value
+  saveNotesMap(notesMap)
+
+  showNotesDialog.value = false
+
+  $q.notify({
+    color: 'positive',
+    message: t('common.save'),
+  })
 }
 </script>
 
