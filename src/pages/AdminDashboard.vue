@@ -123,9 +123,9 @@
               <q-chip
                 dense
                 flat
-                :color="getStatusColor(props.value).bg"
-                :text-color="getStatusColor(props.value).text"
-                class="text-weight-bold q-px-sm status-chip"
+                square
+                class="status-chip-minimal"
+                :style="getStatusStyle(props.value)"
               >
                 {{ formatStatus(props.value) }}
               </q-chip>
@@ -569,12 +569,20 @@ const normalizeStatus = (status) => {
 /*
   Returns chip colors for each status
 */
-const getStatusColor = (status) => {
-  if (status === STATUS.PUBLISHED) return { bg: 'green-1', text: 'green-8' }
-  if (status === STATUS.REVIEWED) return { bg: 'blue-1', text: 'blue-8' }
-  if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
-  if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
-  return { bg: 'grey-2', text: 'grey-8' }
+const getStatusStyle = (status) => {
+  if (status === STATUS.PUBLISHED) {
+    return { backgroundColor: '#E8F5E9', color: '#2E7D32' }
+  }
+  if (status === STATUS.REVIEWED) {
+    return { backgroundColor: '#E3F2FD', color: '#1565C0' }
+  }
+  if (status === STATUS.SUBMITTED) {
+    return { backgroundColor: '#FFF3E0', color: '#EF6C00' }
+  }
+  if (status === STATUS.DRAFT) {
+    return { backgroundColor: '#F5F5F5', color: '#616161' }
+  }
+  return { backgroundColor: '#F5F5F5', color: '#616161' }
 }
 
 const canRowEdit = (doc) =>
@@ -900,20 +908,12 @@ const openDocViewer = async (doc) => {
   vertical-align: bottom;
 }
 
-.status-chip {
-  min-width: 148px;
-  max-width: 100%;
-  justify-content: center;
-}
-
-:deep(.status-chip .q-chip__content) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
-  width: 100%;
+.status-chip-minimal {
+  font-size: inherit;
+  font-weight: normal;
+  line-height: inherit;
+  padding: 2px 6px;
+  border-radius: 6px;
 }
 
 .compact-action-btn {
