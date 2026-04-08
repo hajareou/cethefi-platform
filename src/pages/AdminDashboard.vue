@@ -135,7 +135,7 @@
           <template v-slot:body-cell-author="props">
             <q-td :props="props" class="text-left">
               <span class="cursor-help">
-                {{ getShortAuthor(props.value) }}
+                {{ props.value }}
                 <q-tooltip v-if="hasFullAuthorTooltip(props.value)">
                   {{ props.value }}
                 </q-tooltip>
@@ -393,7 +393,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
+import { getRepoFileJson, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useLocale } from 'src/i18n'
@@ -620,13 +620,6 @@ const canRowPublish = (doc) =>
 
 const canRowDelete = () => canPublish.value
 
-const getShortAuthor = (author) => {
-  const normalized = String(author ?? '').trim()
-  if (!normalized) return t('dashboard.authorUnknown')
-  if (normalized.length <= 3) return normalized
-  return `${normalized.slice(0, 3)}...`
-}
-
 const hasFullAuthorTooltip = (author) => {
   const normalized = String(author ?? '').trim()
   return normalized.length > 3
@@ -637,36 +630,11 @@ const hasFullTitleTooltip = (title) => {
   return normalized.length > 28
 }
 
-// Extract "main" title + author from a TEI XML string
-const extractTeiMeta = (xmlText) => {
-  try {
-    const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
-    if (doc.getElementsByTagName('parsererror').length) return null
-
-    const titleEl =
-      doc.querySelector('teiHeader titleStmt title[type="main"]') ||
-      doc.querySelector('teiHeader titleStmt title')
-
-    const authorEl =
-      doc.querySelector('teiHeader titleStmt author persName') ||
-      doc.querySelector('teiHeader titleStmt author name') ||
-      doc.querySelector('teiHeader titleStmt author')
-
-    return {
-      title: titleEl?.textContent?.trim() || null,
-      author: authorEl?.textContent?.trim() || null,
-    }
-  } catch {
-    return null
-  }
-}
-
 /*
   Loads documents from GitHub index.json
   Then:
   - normalizes data
   - applies local overrides
-  - fetches last commit info
 */
 async function fetchGithubData() {
   loading.value = true
@@ -680,10 +648,10 @@ async function fetchGithubData() {
     // Map GitHub data to table rows
     const flat = data.map((doc) => ({
       id: doc?.id ?? doc?.storage_path ?? doc?.title ?? Math.random().toString(36).slice(2),
-      title: (doc?.title ?? '').replace(/\.xml$/i, ''),
-      author: doc?.author ?? '-',
-      year: doc?.year ?? null,
-      lastModified: doc?.last_modified ?? null,
+      title: doc.title,
+      author: doc.author,
+      year: doc.year,
+      lastModified: doc.last_modified,
       status: normalizeStatus(doc?.status),
       _path: doc?.storage_path ?? null,
     }))
@@ -703,40 +671,6 @@ async function fetchGithubData() {
 
     rows.value = flat
 
-    // Fetch commit metadata + TEI metadata
-    for (const row of rows.value) {
-      if (!row._path) continue
-
-      // --- Commit metadata  ---
-      const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-
-      // --- TEI metadata (NEW) ---
-      try {
-        const xmlText = await getRepoFileText({
-          owner,
-          repo,
-          path: row._path,
-          ref: 'main',
-        })
-
-        const meta = extractTeiMeta(xmlText)
-
-        // Title
-        if (meta?.title) {
-          row.title = meta.title
-        }
-
-        // Author: ONLY from TEI
-        row.author = meta?.author?.trim() ? meta.author.trim() : t('dashboard.authorUnknown')
-      } catch (e) {
-        // If TEI fetch/parse fails, keep existing values
-        console.warn('Failed to read TEI meta for', row._path, e)
-      }
-    }
-
-    rows.value = [...rows.value]
   } catch (e) {
     console.error('Error fetching GitHub data:', e)
     rows.value = []

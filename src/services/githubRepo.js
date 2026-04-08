@@ -14,16 +14,13 @@ export async function getRepoFileJson({ owner, repo, path }) {
   if (!res.ok) throw new Error(`GitHub file fetch failed (HTTP ${res.status})`)
   const data = await res.json()
   if (!data?.content) return null
-  const decoded = atob((data.content || '').replace(/\n/g, ''))
-  return JSON.parse(decoded)
-}
 
-export async function getLastCommit({ owner, repo, path }) {
-  const url = `${apiBase()}/api/github/commits?owner=${owner}&repo=${repo}&path=${encodeURIComponent(path)}`
-  const res = await fetch(url)
-  if (!res.ok) return null
-  const data = await res.json()
-  return data[0]
+  const base64 = (data.content || '').replace(/\n/g, '')
+  const binary = atob(base64)
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+  const decoded = new TextDecoder('utf-8').decode(bytes)
+
+  return JSON.parse(decoded)
 }
 
 export async function getRepoFileText({ owner, repo, path, ref = 'main' }) {
