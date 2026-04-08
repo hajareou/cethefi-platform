@@ -281,36 +281,25 @@
                     outline
                     dense
                     no-caps
-                    icon="send"
-                    :label="t('common.submit')"
-                    color="orange-9"
-                    class="compact-action-btn"
-                    @click="submitForReview(selectedDoc)"
-                  />
-                  <q-btn
-                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
-                    outline
-                    dense
-                    no-caps
                     icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
                     class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
                   />
-
-                  <!-- SUBMITTED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
+                    v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
                     dense
                     no-caps
-                    icon="task_alt"
-                    :label="t('common.approve')"
-                    color="blue-8"
+                    icon="send"
+                    :label="t('common.submit')"
+                    color="orange-9"
                     class="compact-action-btn"
-                    @click="approveToReviewed(selectedDoc)"
+                    @click="submitForReview(selectedDoc)"
                   />
+
+                  <!-- SUBMITTED -->
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
                     outline
@@ -321,6 +310,17 @@
                     color="grey-8"
                     class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
+                  />                
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
+                    outline
+                    dense
+                    no-caps
+                    icon="task_alt"
+                    :label="t('common.approve')"
+                    color="blue-8"
+                    class="compact-action-btn"
+                    @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
@@ -336,17 +336,6 @@
 
                   <!-- REVIEWED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
-                    dense
-                    no-caps
-                    icon="publish"
-                    :label="t('common.publish')"
-                    color="positive"
-                    class="compact-action-btn"
-                    @click="publishDocument(selectedDoc)"
-                  />
-
-                  <q-btn
                     v-if="selectedDoc?.status === STATUS.REVIEWED && canEdit"
                     outline
                     dense
@@ -356,6 +345,16 @@
                     color="grey-8"
                     class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
+                  />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
+                    dense
+                    no-caps
+                    icon="publish"
+                    :label="t('common.publish')"
+                    color="positive"
+                    class="compact-action-btn"
+                    @click="publishDocument(selectedDoc)"
                   />
 
                   <!-- PUBLISHED -->
