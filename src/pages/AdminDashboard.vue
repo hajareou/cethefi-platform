@@ -279,19 +279,23 @@
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
+                    dense
                     no-caps
                     icon="send"
-                    :label="t('common.submittedForReview')"
+                    :label="t('common.submit')"
                     color="orange-9"
+                    class="compact-action-btn"
                     @click="submitForReview(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
+                    dense
                     no-caps
                     icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
+                    class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
                   />
 
@@ -299,48 +303,58 @@
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
+                    dense
                     no-caps
                     icon="task_alt"
                     :label="t('common.approve')"
                     color="blue-8"
+                    class="compact-action-btn"
                     @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
                     outline
+                    dense
                     no-caps
                     icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
+                    class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
+                    dense
                     no-caps
                     icon="undo"
                     :label="t('common.reject')"
                     color="warning"
+                    class="compact-action-btn"
                     @click="rejectToDraft(selectedDoc)"
                   />
 
                   <!-- REVIEWED -->
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
-                    unelevated
+                    dense
                     no-caps
                     icon="publish"
                     :label="t('common.publish')"
                     color="positive"
+                    class="compact-action-btn"
                     @click="publishDocument(selectedDoc)"
                   />
+
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.REVIEWED && canEdit"
                     outline
+                    dense
                     no-caps
                     icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
+                    class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
                   />
 
@@ -348,10 +362,12 @@
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.PUBLISHED && canPublish"
                     outline
+                    dense
                     no-caps
                     icon="visibility_off"
                     :label="t('common.unpublish')"
                     color="negative"
+                    class="compact-action-btn"
                     @click="unpublishDocument(selectedDoc)"
                   />
                 </div>
