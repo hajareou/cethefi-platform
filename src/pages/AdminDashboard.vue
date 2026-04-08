@@ -226,22 +226,6 @@
               <span v-else class="action-placeholder">-</span>
             </q-td>
           </template>
-
-          <template v-slot:body-cell-delete="props">
-            <q-td :props="props" class="text-center">
-              <q-btn
-                v-if="canRowDelete(props.row)"
-                flat
-                dense
-                no-caps
-                color="negative"
-                :label="t('common.delete')"
-                class="compact-action-btn"
-                @click.stop="confirmDeleteDocument(props.row)"
-              />
-              <span v-else class="action-placeholder">-</span>
-            </q-td>
-          </template>
         </q-table>
         <q-dialog v-model="showDocViewer" full-width full-height>
           <q-card class="bg-white">
@@ -371,17 +355,6 @@
                     @click="unpublishDocument(selectedDoc)"
                   />
                 </div>
-
-                <!-- Right side: delete -->
-                <q-btn
-                  v-if="canPublish"
-                  flat
-                  no-caps
-                  icon="delete"
-                  color="negative"
-                  :label="t('common.delete')"
-                  @click="confirmDeleteDocument(selectedDoc)"
-                />
               </div>
             </q-card-actions>
           </q-card>
@@ -546,7 +519,6 @@ const columns = computed(() => {
 
   if (canPublish.value) {
     actionColumns.push(makeActionColumn('publish', t('common.publish'), 112))
-    actionColumns.push(makeActionColumn('delete', t('common.delete'), 92))
   }
 
   return [...baseColumns, ...actionColumns]
@@ -617,8 +589,6 @@ const canRowReject = (doc) => canValidate.value && doc?.status === STATUS.SUBMIT
 
 const canRowPublish = (doc) =>
   canPublish.value && [STATUS.REVIEWED, STATUS.PUBLISHED].includes(doc?.status)
-
-const canRowDelete = () => canPublish.value
 
 const hasFullAuthorTooltip = (author) => {
   const normalized = String(author ?? '').trim()
@@ -804,36 +774,6 @@ const editDocument = (doc) => {
   closeDocViewer()
 
   window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
-}
-
-const confirmDeleteDocument = (doc) => {
-  if (!canPublish.value) return
-  $q.dialog({
-    title: t('dashboard.deleteConfirmTitle'),
-    message: t('dashboard.deleteConfirm', { title: doc.title }),
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    deleteDocument(doc)
-    closeDocViewer()
-  })
-}
-
-/*
-  Remove document from table
-  and from local overrides
-*/
-const deleteDocument = (doc) => {
-  rows.value = rows.value.filter((d) => d.id !== doc.id)
-
-  const overrides = loadOverrides()
-  delete overrides[doc.id]
-  saveOverrides(overrides)
-
-  $q.notify({
-    color: 'negative',
-    message: t('dashboard.deleted'),
-  })
 }
 
 /*
