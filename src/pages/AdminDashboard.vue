@@ -281,7 +281,6 @@
                     outline
                     dense
                     no-caps
-                    icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
                     class="compact-action-btn"
@@ -292,7 +291,6 @@
                     outline
                     dense
                     no-caps
-                    icon="send"
                     :label="t('common.submit')"
                     color="orange-9"
                     class="compact-action-btn"
@@ -305,7 +303,6 @@
                     outline
                     dense
                     no-caps
-                    icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
                     class="compact-action-btn"
@@ -316,7 +313,6 @@
                     outline
                     dense
                     no-caps
-                    icon="task_alt"
                     :label="t('common.approve')"
                     color="blue-8"
                     class="compact-action-btn"
@@ -327,7 +323,6 @@
                     outline
                     dense
                     no-caps
-                    icon="undo"
                     :label="t('common.reject')"
                     color="warning"
                     class="compact-action-btn"
@@ -340,7 +335,6 @@
                     outline
                     dense
                     no-caps
-                    icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
                     class="compact-action-btn"
@@ -350,7 +344,6 @@
                     v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
                     dense
                     no-caps
-                    icon="publish"
                     :label="t('common.publish')"
                     color="positive"
                     class="compact-action-btn"
@@ -363,7 +356,6 @@
                     outline
                     dense
                     no-caps
-                    icon="visibility_off"
                     :label="t('common.unpublish')"
                     color="negative"
                     class="compact-action-btn"
