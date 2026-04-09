@@ -390,14 +390,16 @@
 
             <q-separator />
 
-            <q-card-section>
+            <q-card-section class="q-pa-md" style="position: relative">
               <q-input
                 v-model="notesText"
                 type="textarea"
                 autogrow
                 outlined
                 class="full-width"
+                :disable="notesLoading || notesSaving"
               />
+              <q-inner-loading :showing="notesLoading || notesSaving" />
             </q-card-section>
 
             <q-separator />
@@ -417,6 +419,8 @@
                 color="primary"
                 class="compact-action-btn"
                 :label="t('common.save')"
+                :loading="notesSaving"
+                :disable="notesLoading"
                 @click="saveNotes"
               />
             </q-card-actions>
@@ -435,6 +439,7 @@ import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 import CETEI from 'CETEIcean'
+import { fetchDocNote, saveDocNote } from '../services/notesApi'
 
 const authStore = useAuthStore()
 const { t } = useLocale()
@@ -962,44 +967,55 @@ const openDocViewer = async (doc) => {
   }
 }
 
-const DOC_NOTES_KEY = 'docNotes'
-
 const showNotesDialog = ref(false)
 const notesDoc = ref(null)
 const notesText = ref('')
+const notesLoading = ref(false)
+const notesSaving = ref(false)
 
-const loadNotesMap = () => {
+const openNotes = async (row) => {
+  notesDoc.value = row
+  notesText.value = ''
+  showNotesDialog.value = true
+  notesLoading.value = true
+
   try {
-    return JSON.parse(localStorage.getItem(DOC_NOTES_KEY) || '{}')
-  } catch {
-    return {}
+    const data = await fetchDocNote(row.id)
+    notesText.value = data.note || ''
+  } catch (e) {
+    console.error('Failed to load note:', e)
+    $q.notify({
+      color: 'negative',
+      message: t('dashboard.loadFailed'),
+    })
+  } finally {
+    notesLoading.value = false
   }
 }
 
-const saveNotesMap = (notesMap) => {
-  localStorage.setItem(DOC_NOTES_KEY, JSON.stringify(notesMap))
-}
-
-const openNotes = (row) => {
-  notesDoc.value = row
-  const notesMap = loadNotesMap()
-  notesText.value = notesMap[row.id] || ''
-  showNotesDialog.value = true
-}
-
-const saveNotes = () => {
+const saveNotes = async () => {
   if (!notesDoc.value) return
 
-  const notesMap = loadNotesMap()
-  notesMap[notesDoc.value.id] = notesText.value
-  saveNotesMap(notesMap)
+  notesSaving.value = true
 
-  showNotesDialog.value = false
+  try {
+    await saveDocNote(notesDoc.value.id, notesText.value)
 
-  $q.notify({
-    color: 'positive',
-    message: t('common.save'),
-  })
+    showNotesDialog.value = false
+
+    $q.notify({
+      color: 'positive',
+      message: t('common.save'),
+    })
+  } catch (e) {
+    console.error('Failed to save note:', e)
+    $q.notify({
+      color: 'negative',
+      message: e?.response?.data?.message || t('dashboard.saveFailed'),
+    })
+  } finally {
+    notesSaving.value = false
+  }
 }
 </script>
 
