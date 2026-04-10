@@ -440,6 +440,7 @@ import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 import CETEI from 'CETEIcean'
 import { fetchDocNote, saveDocNote } from '../services/notesApi'
+import { updateDocumentStatus } from '../services/documentsApi'
 
 const authStore = useAuthStore()
 const { t } = useLocale()
@@ -704,14 +705,6 @@ async function fetchGithubData() {
       _path: doc?.storage_path ?? null,
     }))
 
-    // Load local status overrides
-    const overrides = loadOverrides()
-
-    for (const row of flat) {
-      const o = overrides[row.id]
-      if (o?.status) row.status = o.status
-    }
-
     // Sort documents
     flat.sort((a, b) =>
       (a.status + a.title).localeCompare(b.status + b.title, 'fr', { sensitivity: 'base' }),
@@ -739,59 +732,54 @@ onMounted(() => {
   - saves override locally
   - closes menu
 */
-const submitForReview = (doc) => {
-  if (!canEdit.value) return
-  doc.status = STATUS.SUBMITTED
-  saveDocOverride(doc)
-  showNotify({
+const submitForReview = async (doc) => {
+  if (!canEdit.value) return;
+
+  await persistStatusChange(doc, STATUS.SUBMITTED, {
     color: 'info',
     message: t('dashboard.submittedMessage'),
     icon: 'send',
-  })
+  });
 }
 
-const rejectToDraft = (doc) => {
-  if (!canValidate.value) return
-  doc.status = STATUS.DRAFT
-  saveDocOverride(doc)
-  showNotify({
+const rejectToDraft = async (doc) => {
+  if (!canValidate.value) return;
+
+  await persistStatusChange(doc, STATUS.DRAFT, {
     color: 'warning',
     message: t('dashboard.rejectedMessage'),
     icon: 'undo',
-  })
+  });
 }
 
-const approveToReviewed = (doc) => {
-  if (!canValidate.value) return
-  doc.status = STATUS.REVIEWED
-  saveDocOverride(doc)
-  showNotify({
+const approveToReviewed = async (doc) => {
+  if (!canValidate.value) return;
+
+  await persistStatusChange(doc, STATUS.REVIEWED, {
     color: 'positive',
     message: t('dashboard.approveDocument'),
     icon: 'send',
-  })
+  });
 }
 
-const publishDocument = (doc) => {
-  if (!canPublish.value) return
-  doc.status = STATUS.PUBLISHED
-  saveDocOverride(doc)
-  showNotify({
+const publishDocument = async (doc) => {
+  if (!canPublish.value) return;
+
+  await persistStatusChange(doc, STATUS.PUBLISHED, {
     color: 'positive',
     message: t('dashboard.publishedMessage'),
     icon: 'send',
-  })
+  });
 }
 
-const unpublishDocument = (doc) => {
-  if (!canPublish.value) return
-  doc.status = STATUS.DRAFT
-  saveDocOverride(doc)
-  showNotify({
+const unpublishDocument = async (doc) => {
+  if (!canPublish.value) return;
+
+  await persistStatusChange(doc, STATUS.DRAFT, {
     color: 'warning',
     message: t('dashboard.unpublishedMessage'),
     icon: 'undo',
-  })
+  });
 }
 
 /*
@@ -852,40 +840,6 @@ const editDocument = (doc) => {
   closeDocViewer()
 
   window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
-}
-
-/*
-  LocalStorage key for status overrides
-*/
-const DOC_OVERRIDES_KEY = 'docOverrides'
-
-/*
-  Load overrides from localStorage
-*/
-const loadOverrides = () => {
-  try {
-    return JSON.parse(localStorage.getItem(DOC_OVERRIDES_KEY) || '{}')
-  } catch {
-    return {}
-  }
-}
-
-/*
-  Save full overrides object
-*/
-const saveOverrides = (overrides) => {
-  localStorage.setItem(DOC_OVERRIDES_KEY, JSON.stringify(overrides))
-}
-
-/*
-  Save status for a single document
-*/
-const saveDocOverride = (doc) => {
-  const overrides = loadOverrides()
-  overrides[doc.id] = {
-    status: doc.status,
-  }
-  saveOverrides(overrides)
 }
 
 /*
@@ -1015,6 +969,27 @@ const saveNotes = async () => {
     })
   } finally {
     notesSaving.value = false
+  }
+}
+
+const persistStatusChange = async (doc, nextStatus, notifyOptions) => {
+  if (!doc?.id) return
+
+  const previousStatus = doc.status
+  doc.status = nextStatus
+
+  try {
+    console.log('Sending status update', doc.id, nextStatus)
+    await updateDocumentStatus(doc.id, nextStatus)
+    await fetchGithubData()
+    showNotify(notifyOptions)
+  } catch (e) {
+    doc.status = previousStatus
+    console.error('Failed to update status:', e)
+    $q.notify({
+      color: 'negative',
+      message: e?.response?.data?.message || t('dashboard.saveFailed'),
+    })
   }
 }
 </script>
