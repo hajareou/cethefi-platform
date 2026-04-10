@@ -11,8 +11,10 @@ services:
       - HTTPS_PROXY=http://cache.univ-nantes.fr:3128/
       - HTTP_PROXY=http://cache.univ-nantes.fr:3128/
       - NO_PROXY=127.0.0.1,localhost
+      - USERS_FILE_PATH=/app/dashboard-data-admin/users.json
     volumes:
       - ./submodules/backend/data:/app/data
+      - ../dashboard-data-admin:/app/dashboard-data-admin
     ports:
       - "8091:8091"
     restart: unless-stopped
