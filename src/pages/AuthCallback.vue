@@ -15,6 +15,9 @@ onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token')
 
+  // Remove token from URL immediately to prevent it from being visible or stored in browser history
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.hash)
+
   if (!token || !API) {
     router.replace('/login')
     return
