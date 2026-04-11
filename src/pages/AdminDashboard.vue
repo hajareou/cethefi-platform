@@ -637,30 +637,6 @@ const hasFullTitleTooltip = (title) => {
   return normalized.length > 28
 }
 
-// Extract "main" title + author from a TEI XML string
-const extractTeiMeta = (xmlText) => {
-  try {
-    const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
-    if (doc.getElementsByTagName('parsererror').length) return null
-
-    const titleEl =
-      doc.querySelector('teiHeader titleStmt title[type="main"]') ||
-      doc.querySelector('teiHeader titleStmt title')
-
-    const authorEl =
-      doc.querySelector('teiHeader titleStmt author persName') ||
-      doc.querySelector('teiHeader titleStmt author name') ||
-      doc.querySelector('teiHeader titleStmt author')
-
-    return {
-      title: titleEl?.textContent?.trim() || null,
-      author: authorEl?.textContent?.trim() || null,
-    }
-  } catch {
-    return null
-  }
-}
-
 /*
   Loads documents from GitHub index.json
   Then:
@@ -703,37 +679,15 @@ async function fetchGithubData() {
 
     rows.value = flat
 
-    // Fetch commit metadata + TEI metadata
+    // Fetch commit metadata (last-modified date) for each document.
+    // Title and author come from index.json directly — no need to download full XML here.
+    // XML is fetched on-demand only when the user opens a document (see openDocViewer).
     for (const row of rows.value) {
       if (!row._path) continue
 
-      // --- Commit metadata  ---
       const commitData = await getLastCommit({ owner, repo, path: row._path })
       const dateIso = commitData?.commit?.author?.date ?? null
       if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-
-      // --- TEI metadata (NEW) ---
-      try {
-        const xmlText = await getRepoFileText({
-          owner,
-          repo,
-          path: row._path,
-          ref: 'main',
-        })
-
-        const meta = extractTeiMeta(xmlText)
-
-        // Title
-        if (meta?.title) {
-          row.title = meta.title
-        }
-
-        // Author: ONLY from TEI
-        row.author = meta?.author?.trim() ? meta.author.trim() : t('dashboard.authorUnknown')
-      } catch (e) {
-        // If TEI fetch/parse fails, keep existing values
-        console.warn('Failed to read TEI meta for', row._path, e)
-      }
     }
 
     rows.value = [...rows.value]
