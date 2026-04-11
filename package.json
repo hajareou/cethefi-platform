@@ -1,8 +1,8 @@
 {
   "name": "cethefi-platform",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Quasar App",
+  "description": "Manage and modify theatrical plays from the 18th century",
+  "productName": "CETHEFI Platform",
   "author": "",
   "type": "module",
   "private": true,
