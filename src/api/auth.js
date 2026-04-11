@@ -30,8 +30,7 @@ export const authApi = {
    * @param {string} frontendRedirectUrl - URL to redirect after successful auth
    */
   startGithubLogin(frontendRedirectUrl) {
-    // const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8091'
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://192.168.196.89:8091'
+    const baseUrl = import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:8091'
     const url = `${baseUrl}/api/auth/github/start?frontendRedirectUrl=${encodeURIComponent(frontendRedirectUrl)}`
     window.location.href = url
   },
@@ -61,7 +60,7 @@ export const authApi = {
   async logout() {
     const response = await api.post('/api/auth/logout')
     // Clear local storage
-    localStorage.removeItem('auth_token')
+    localStorage.removeItem('authToken')
     localStorage.removeItem('user')
     return response.data
   },
@@ -72,7 +71,7 @@ export const authApi = {
    */
   saveAuthData(authData) {
     if (authData.token) {
-      localStorage.setItem('auth_token', authData.token)
+      localStorage.setItem('authToken', authData.token)
     }
     if (authData.user) {
       localStorage.setItem('user', JSON.stringify(authData.user))
@@ -89,7 +88,7 @@ export const authApi = {
    * Get saved authentication data from localStorage
    */
   getSavedAuthData() {
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('authToken')
     const userStr = localStorage.getItem('user')
     const permissionsStr = localStorage.getItem('permissions')
     const expiresAt = localStorage.getItem('token_expires_at')

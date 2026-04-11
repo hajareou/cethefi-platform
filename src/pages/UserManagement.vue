@@ -397,13 +397,17 @@ const loading = ref(false)
 const hasLoadedUsers = ref(false)
 
 const normalizeIdentity = (value) => String(value || '').trim().toLowerCase()
+const normalizeGithubId = (value) => String(value || '').trim()
 
 const buildIdentityKey = (user) =>
-  normalizeIdentity(user?.email) || normalizeIdentity(user?.githubUsername)
+  normalizeGithubId(user?.githubId) ||
+  normalizeIdentity(user?.email) ||
+  normalizeIdentity(user?.githubUsername)
 
 const normalizeUserEntry = (user = {}) => {
   const normalized = {
     ...user,
+    githubId: normalizeGithubId(user.githubId),
     email: String(user.email || '').trim(),
     githubUsername: String(user.githubUsername || '').trim(),
     isAdmin: !!user.isAdmin,

@@ -3,8 +3,7 @@ import axios from 'axios'
 
 // Create axios instance with default configuration
 const api = axios.create({
-  // baseURL: import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:8091',
-  baseURL: import.meta.env.VITE_AUTH_API_BASE_URL || 'http://192.168.196.89:8091',
+  baseURL: import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:8091',
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -16,7 +15,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get auth token from localStorage
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('authToken')
 
     // If token exists, add it to Authorization header
     if (token) {
@@ -56,7 +55,7 @@ api.interceptors.response.use(
 
       // Handle 401 Unauthorized - token expired or invalid
       if (status === 401) {
-        localStorage.removeItem('auth_token')
+        localStorage.removeItem('authToken')
         localStorage.removeItem('user')
         // You can redirect to login page here if needed
         // router.push('/login')
