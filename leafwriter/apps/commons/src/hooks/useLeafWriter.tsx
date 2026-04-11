@@ -3,7 +3,7 @@ import { leafwriterAtom, leafWriterEventsAtom, tapDocumentTimerAtom } from '@src
 import { useActions, useAppState } from '@src/overmind';
 import { convertDocument } from '@src/services/leaf-te';
 import type { Resource } from '@src/types';
-import { changeFileExtension } from '@src/utilities';
+import { absoluteAppUrl, changeFileExtension } from '@src/utilities';
 import { useAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -36,6 +36,7 @@ export const useLeafWriter = () => {
   const [leafWriter, setLeafWriter] = useAtom(leafwriterAtom);
   const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
+  const leafWriterBaseUrl = absoluteAppUrl('').replace(/\/$/, '');
 
   const loadLib = async (element: HTMLElement) => {
     const lw = await loadLeafWriter(element);
@@ -51,6 +52,7 @@ export const useLeafWriter = () => {
     };
 
     const settings: LeafWriterOptionsSettings = {
+      baseUrl: leafWriterBaseUrl,
       locale: currentLocale,
       readonly,
       schemas,
