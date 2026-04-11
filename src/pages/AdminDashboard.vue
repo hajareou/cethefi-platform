@@ -123,9 +123,9 @@
               <q-chip
                 dense
                 flat
-                :color="getStatusColor(props.value).bg"
-                :text-color="getStatusColor(props.value).text"
-                class="text-weight-bold q-px-sm status-chip"
+                square
+                class="status-chip-minimal"
+                :style="getStatusStyle(props.value)"
               >
                 {{ formatStatus(props.value) }}
               </q-chip>
@@ -135,7 +135,7 @@
           <template v-slot:body-cell-author="props">
             <q-td :props="props" class="text-left">
               <span class="cursor-help">
-                {{ getShortAuthor(props.value) }}
+                {{ props.value }}
                 <q-tooltip v-if="hasFullAuthorTooltip(props.value)">
                   {{ props.value }}
                 </q-tooltip>
@@ -211,6 +211,21 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-notes="props">
+            <q-td :props="props" class="text-center">
+              <q-btn
+                flat
+                dense
+                round
+                color="grey-7"
+                icon="sticky_note_2"
+                @click.stop="openNotes(props.row)"
+              >
+                <q-tooltip>{{ t('common.notes') }}</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-reject="props">
             <q-td :props="props" class="text-center">
               <q-btn
@@ -222,22 +237,6 @@
                 :label="t('common.reject')"
                 class="compact-action-btn"
                 @click.stop="rejectToDraft(props.row)"
-              />
-              <span v-else class="action-placeholder">-</span>
-            </q-td>
-          </template>
-
-          <template v-slot:body-cell-delete="props">
-            <q-td :props="props" class="text-center">
-              <q-btn
-                v-if="canRowDelete(props.row)"
-                flat
-                dense
-                no-caps
-                color="negative"
-                :label="t('common.delete')"
-                class="compact-action-btn"
-                @click.stop="confirmDeleteDocument(props.row)"
               />
               <span v-else class="action-placeholder">-</span>
             </q-td>
@@ -295,94 +294,135 @@
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
+                    dense
                     no-caps
-                    icon="send"
-                    :label="t('common.submittedForReview')"
-                    color="orange-9"
-                    @click="submitForReview(selectedDoc)"
+                    :label="t('common.modify')"
+                    color="grey-8"
+                    class="compact-action-btn"
+                    @click="editDocument(selectedDoc)"
                   />
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.DRAFT && canEdit"
                     outline
+                    dense
                     no-caps
-                    icon="edit"
-                    :label="t('common.modify')"
-                    color="grey-8"
-                    @click="editDocument(selectedDoc)"
+                    :label="t('common.submit')"
+                    color="orange-9"
+                    class="compact-action-btn"
+                    @click="submitForReview(selectedDoc)"
                   />
 
                   <!-- SUBMITTED -->
                   <q-btn
+                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
+                    outline
+                    dense
+                    no-caps
+                    :label="t('common.modify')"
+                    color="grey-8"
+                    class="compact-action-btn"
+                    @click="editDocument(selectedDoc)"
+                  />                
+                  <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
+                    dense
                     no-caps
-                    icon="task_alt"
                     :label="t('common.approve')"
                     color="blue-8"
+                    class="compact-action-btn"
                     @click="approveToReviewed(selectedDoc)"
                   />
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.SUBMITTED && canEdit"
-                    outline
-                    no-caps
-                    icon="edit"
-                    :label="t('common.modify')"
-                    color="grey-8"
-                    @click="editDocument(selectedDoc)"
-                  />
-                  <q-btn
                     v-if="selectedDoc?.status === STATUS.SUBMITTED && canValidate"
                     outline
+                    dense
                     no-caps
-                    icon="undo"
                     :label="t('common.reject')"
                     color="warning"
+                    class="compact-action-btn"
                     @click="rejectToDraft(selectedDoc)"
                   />
 
                   <!-- REVIEWED -->
                   <q-btn
-                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
-                    unelevated
-                    no-caps
-                    icon="publish"
-                    :label="t('common.publish')"
-                    color="positive"
-                    @click="publishDocument(selectedDoc)"
-                  />
-                  <q-btn
                     v-if="selectedDoc?.status === STATUS.REVIEWED && canEdit"
                     outline
+                    dense
                     no-caps
-                    icon="edit"
                     :label="t('common.modify')"
                     color="grey-8"
+                    class="compact-action-btn"
                     @click="editDocument(selectedDoc)"
+                  />
+                  <q-btn
+                    v-if="selectedDoc?.status === STATUS.REVIEWED && canPublish"
+                    dense
+                    no-caps
+                    :label="t('common.publish')"
+                    color="positive"
+                    class="compact-action-btn"
+                    @click="publishDocument(selectedDoc)"
                   />
 
                   <!-- PUBLISHED -->
                   <q-btn
                     v-if="selectedDoc?.status === STATUS.PUBLISHED && canPublish"
                     outline
+                    dense
                     no-caps
-                    icon="visibility_off"
                     :label="t('common.unpublish')"
                     color="negative"
+                    class="compact-action-btn"
                     @click="unpublishDocument(selectedDoc)"
                   />
                 </div>
-
-                <!-- Right side: delete -->
-                <q-btn
-                  v-if="canPublish"
-                  flat
-                  no-caps
-                  icon="delete"
-                  color="negative"
-                  :label="t('common.delete')"
-                  @click="confirmDeleteDocument(selectedDoc)"
-                />
               </div>
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
+        <q-dialog v-model="showNotesDialog">
+          <q-card style="width: 700px; max-width: 90vw">
+            <q-card-section class="row items-center justify-between">
+              <div class="text-h6">{{ notesDoc?.title }}</div>
+              <q-btn flat round icon="close" v-close-popup />
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-section class="q-pa-md" style="position: relative">
+              <q-input
+                v-model="notesText"
+                type="textarea"
+                autogrow
+                outlined
+                class="full-width"
+                :disable="notesLoading || notesSaving"
+              />
+              <q-inner-loading :showing="notesLoading || notesSaving" />
+            </q-card-section>
+
+            <q-separator />
+
+            <q-card-actions align="right" class="q-pa-md">
+              <q-btn
+                outline
+                dense
+                no-caps
+                color="grey-8"
+                :label="t('common.close')"
+                v-close-popup
+              />
+              <q-btn
+                dense
+                no-caps
+                color="primary"
+                class="compact-action-btn"
+                :label="t('common.save')"
+                :loading="notesSaving"
+                :disable="notesLoading"
+                @click="saveNotes"
+              />
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -393,12 +433,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
+import { getRepoFileJson, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 import CETEI from 'CETEIcean'
+import { fetchDocNote, saveDocNote } from '../services/notesApi'
+import { updateDocumentStatus } from '../services/documentsApi'
 
 const authStore = useAuthStore()
 const { t } = useLocale()
@@ -546,8 +588,9 @@ const columns = computed(() => {
 
   if (canPublish.value) {
     actionColumns.push(makeActionColumn('publish', t('common.publish'), 112))
-    actionColumns.push(makeActionColumn('delete', t('common.delete'), 92))
   }
+
+  actionColumns.push(makeActionColumn('notes', t('common.notes'), 72))
 
   return [...baseColumns, ...actionColumns]
 })
@@ -597,12 +640,20 @@ const normalizeStatus = (status) => {
 /*
   Returns chip colors for each status
 */
-const getStatusColor = (status) => {
-  if (status === STATUS.PUBLISHED) return { bg: 'green-1', text: 'green-8' }
-  if (status === STATUS.REVIEWED) return { bg: 'blue-1', text: 'blue-8' }
-  if (status === STATUS.SUBMITTED) return { bg: 'orange-1', text: 'orange-9' }
-  if (status === STATUS.DRAFT) return { bg: 'grey-2', text: 'grey-8' }
-  return { bg: 'grey-2', text: 'grey-8' }
+const getStatusStyle = (status) => {
+  if (status === STATUS.PUBLISHED) {
+    return { backgroundColor: '#E8F5E9', color: '#2E7D32' }
+  }
+  if (status === STATUS.REVIEWED) {
+    return { backgroundColor: '#E3F2FD', color: '#1565C0' }
+  }
+  if (status === STATUS.SUBMITTED) {
+    return { backgroundColor: '#FFF3E0', color: '#EF6C00' }
+  }
+  if (status === STATUS.DRAFT) {
+    return { backgroundColor: '#F5F5F5', color: '#616161' }
+  }
+  return { backgroundColor: '#F5F5F5', color: '#616161' }
 }
 
 const canRowEdit = (doc) =>
@@ -618,15 +669,6 @@ const canRowReject = (doc) => canValidate.value && doc?.status === STATUS.SUBMIT
 const canRowPublish = (doc) =>
   canPublish.value && [STATUS.REVIEWED, STATUS.PUBLISHED].includes(doc?.status)
 
-const canRowDelete = () => canPublish.value
-
-const getShortAuthor = (author) => {
-  const normalized = String(author ?? '').trim()
-  if (!normalized) return t('dashboard.authorUnknown')
-  if (normalized.length <= 3) return normalized
-  return `${normalized.slice(0, 3)}...`
-}
-
 const hasFullAuthorTooltip = (author) => {
   const normalized = String(author ?? '').trim()
   return normalized.length > 3
@@ -637,36 +679,11 @@ const hasFullTitleTooltip = (title) => {
   return normalized.length > 28
 }
 
-// Extract "main" title + author from a TEI XML string
-const extractTeiMeta = (xmlText) => {
-  try {
-    const doc = new DOMParser().parseFromString(xmlText, 'text/xml')
-    if (doc.getElementsByTagName('parsererror').length) return null
-
-    const titleEl =
-      doc.querySelector('teiHeader titleStmt title[type="main"]') ||
-      doc.querySelector('teiHeader titleStmt title')
-
-    const authorEl =
-      doc.querySelector('teiHeader titleStmt author persName') ||
-      doc.querySelector('teiHeader titleStmt author name') ||
-      doc.querySelector('teiHeader titleStmt author')
-
-    return {
-      title: titleEl?.textContent?.trim() || null,
-      author: authorEl?.textContent?.trim() || null,
-    }
-  } catch {
-    return null
-  }
-}
-
 /*
   Loads documents from GitHub index.json
   Then:
   - normalizes data
   - applies local overrides
-  - fetches last commit info
 */
 async function fetchGithubData() {
   loading.value = true
@@ -680,21 +697,13 @@ async function fetchGithubData() {
     // Map GitHub data to table rows
     const flat = data.map((doc) => ({
       id: doc?.id ?? doc?.storage_path ?? doc?.title ?? Math.random().toString(36).slice(2),
-      title: (doc?.title ?? '').replace(/\.xml$/i, ''),
-      author: doc?.author ?? '-',
-      year: doc?.year ?? null,
-      lastModified: doc?.last_modified ?? null,
+      title: doc.title,
+      author: doc.author,
+      year: doc.year,
+      lastModified: doc.last_modified,
       status: normalizeStatus(doc?.status),
       _path: doc?.storage_path ?? null,
     }))
-
-    // Load local status overrides
-    const overrides = loadOverrides()
-
-    for (const row of flat) {
-      const o = overrides[row.id]
-      if (o?.status) row.status = o.status
-    }
 
     // Sort documents
     flat.sort((a, b) =>
@@ -703,40 +712,6 @@ async function fetchGithubData() {
 
     rows.value = flat
 
-    // Fetch commit metadata + TEI metadata
-    for (const row of rows.value) {
-      if (!row._path) continue
-
-      // --- Commit metadata  ---
-      const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-
-      // --- TEI metadata (NEW) ---
-      try {
-        const xmlText = await getRepoFileText({
-          owner,
-          repo,
-          path: row._path,
-          ref: 'main',
-        })
-
-        const meta = extractTeiMeta(xmlText)
-
-        // Title
-        if (meta?.title) {
-          row.title = meta.title
-        }
-
-        // Author: ONLY from TEI
-        row.author = meta?.author?.trim() ? meta.author.trim() : t('dashboard.authorUnknown')
-      } catch (e) {
-        // If TEI fetch/parse fails, keep existing values
-        console.warn('Failed to read TEI meta for', row._path, e)
-      }
-    }
-
-    rows.value = [...rows.value]
   } catch (e) {
     console.error('Error fetching GitHub data:', e)
     rows.value = []
@@ -757,59 +732,54 @@ onMounted(() => {
   - saves override locally
   - closes menu
 */
-const submitForReview = (doc) => {
-  if (!canEdit.value) return
-  doc.status = STATUS.SUBMITTED
-  saveDocOverride(doc)
-  showNotify({
+const submitForReview = async (doc) => {
+  if (!canEdit.value) return;
+
+  await persistStatusChange(doc, STATUS.SUBMITTED, {
     color: 'info',
     message: t('dashboard.submittedMessage'),
     icon: 'send',
-  })
+  });
 }
 
-const rejectToDraft = (doc) => {
-  if (!canValidate.value) return
-  doc.status = STATUS.DRAFT
-  saveDocOverride(doc)
-  showNotify({
+const rejectToDraft = async (doc) => {
+  if (!canValidate.value) return;
+
+  await persistStatusChange(doc, STATUS.DRAFT, {
     color: 'warning',
     message: t('dashboard.rejectedMessage'),
     icon: 'undo',
-  })
+  });
 }
 
-const approveToReviewed = (doc) => {
-  if (!canValidate.value) return
-  doc.status = STATUS.REVIEWED
-  saveDocOverride(doc)
-  showNotify({
+const approveToReviewed = async (doc) => {
+  if (!canValidate.value) return;
+
+  await persistStatusChange(doc, STATUS.REVIEWED, {
     color: 'positive',
     message: t('dashboard.approveDocument'),
     icon: 'send',
-  })
+  });
 }
 
-const publishDocument = (doc) => {
-  if (!canPublish.value) return
-  doc.status = STATUS.PUBLISHED
-  saveDocOverride(doc)
-  showNotify({
+const publishDocument = async (doc) => {
+  if (!canPublish.value) return;
+
+  await persistStatusChange(doc, STATUS.PUBLISHED, {
     color: 'positive',
     message: t('dashboard.publishedMessage'),
     icon: 'send',
-  })
+  });
 }
 
-const unpublishDocument = (doc) => {
-  if (!canPublish.value) return
-  doc.status = STATUS.DRAFT
-  saveDocOverride(doc)
-  showNotify({
+const unpublishDocument = async (doc) => {
+  if (!canPublish.value) return;
+
+  await persistStatusChange(doc, STATUS.DRAFT, {
     color: 'warning',
     message: t('dashboard.unpublishedMessage'),
     icon: 'undo',
-  })
+  });
 }
 
 /*
@@ -870,70 +840,6 @@ const editDocument = (doc) => {
   closeDocViewer()
 
   window.location.href = `${LEAFWRITER_URL}/edit?${params.toString()}`
-}
-
-const confirmDeleteDocument = (doc) => {
-  if (!canPublish.value) return
-  $q.dialog({
-    title: t('dashboard.deleteConfirmTitle'),
-    message: t('dashboard.deleteConfirm', { title: doc.title }),
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    deleteDocument(doc)
-    closeDocViewer()
-  })
-}
-
-/*
-  Remove document from table
-  and from local overrides
-*/
-const deleteDocument = (doc) => {
-  rows.value = rows.value.filter((d) => d.id !== doc.id)
-
-  const overrides = loadOverrides()
-  delete overrides[doc.id]
-  saveOverrides(overrides)
-
-  $q.notify({
-    color: 'negative',
-    message: t('dashboard.deleted'),
-  })
-}
-
-/*
-  LocalStorage key for status overrides
-*/
-const DOC_OVERRIDES_KEY = 'docOverrides'
-
-/*
-  Load overrides from localStorage
-*/
-const loadOverrides = () => {
-  try {
-    return JSON.parse(localStorage.getItem(DOC_OVERRIDES_KEY) || '{}')
-  } catch {
-    return {}
-  }
-}
-
-/*
-  Save full overrides object
-*/
-const saveOverrides = (overrides) => {
-  localStorage.setItem(DOC_OVERRIDES_KEY, JSON.stringify(overrides))
-}
-
-/*
-  Save status for a single document
-*/
-const saveDocOverride = (doc) => {
-  const overrides = loadOverrides()
-  overrides[doc.id] = {
-    status: doc.status,
-  }
-  saveOverrides(overrides)
 }
 
 /*
@@ -1014,6 +920,78 @@ const openDocViewer = async (doc) => {
     docLoading.value = false
   }
 }
+
+const showNotesDialog = ref(false)
+const notesDoc = ref(null)
+const notesText = ref('')
+const notesLoading = ref(false)
+const notesSaving = ref(false)
+
+const openNotes = async (row) => {
+  notesDoc.value = row
+  notesText.value = ''
+  showNotesDialog.value = true
+  notesLoading.value = true
+
+  try {
+    const data = await fetchDocNote(row.id)
+    notesText.value = data.note || ''
+  } catch (e) {
+    console.error('Failed to load note:', e)
+    $q.notify({
+      color: 'negative',
+      message: t('dashboard.loadFailed'),
+    })
+  } finally {
+    notesLoading.value = false
+  }
+}
+
+const saveNotes = async () => {
+  if (!notesDoc.value) return
+
+  notesSaving.value = true
+
+  try {
+    await saveDocNote(notesDoc.value.id, notesText.value)
+
+    showNotesDialog.value = false
+
+    $q.notify({
+      color: 'positive',
+      message: t('common.save'),
+    })
+  } catch (e) {
+    console.error('Failed to save note:', e)
+    $q.notify({
+      color: 'negative',
+      message: e?.response?.data?.message || t('dashboard.saveFailed'),
+    })
+  } finally {
+    notesSaving.value = false
+  }
+}
+
+const persistStatusChange = async (doc, nextStatus, notifyOptions) => {
+  if (!doc?.id) return
+
+  const previousStatus = doc.status
+  doc.status = nextStatus
+
+  try {
+    console.log('Sending status update', doc.id, nextStatus)
+    await updateDocumentStatus(doc.id, nextStatus)
+    await fetchGithubData()
+    showNotify(notifyOptions)
+  } catch (e) {
+    doc.status = previousStatus
+    console.error('Failed to update status:', e)
+    $q.notify({
+      color: 'negative',
+      message: e?.response?.data?.message || t('dashboard.saveFailed'),
+    })
+  }
+}
 </script>
 
 <style scoped>
@@ -1026,20 +1004,12 @@ const openDocViewer = async (doc) => {
   vertical-align: bottom;
 }
 
-.status-chip {
-  min-width: 148px;
-  max-width: 100%;
-  justify-content: center;
-}
-
-:deep(.status-chip .q-chip__content) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
-  width: 100%;
+.status-chip-minimal {
+  font-size: inherit;
+  font-weight: normal;
+  line-height: inherit;
+  padding: 2px 6px;
+  border-radius: 6px;
 }
 
 .compact-action-btn {

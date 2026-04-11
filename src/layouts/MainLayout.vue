@@ -124,7 +124,7 @@
           <q-item
             clickable
             tag="a"
-            href="https://github.com/hajareou/cethefi-platform"
+            href="https://github.com/hajareou/leafwriter-test"
             target="_blank"
             rel="noopener"
           >
