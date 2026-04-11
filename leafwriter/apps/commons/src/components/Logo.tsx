@@ -1,5 +1,6 @@
 import Box, { BoxProps } from '@mui/material/Box';
 import { useColorScheme } from '@mui/material/styles';
+import { appPath } from '@src/utilities';
 
 interface LogoProps extends BoxProps {
   height?: CSSStyleDeclaration['height'] | number;
@@ -22,7 +23,7 @@ export const Logo = ({
       <img
         alt="LEAF-Writer"
         height={height}
-        src={`/assets/logo/logo-${variant}-${size}-${themeMode}.png`}
+        src={appPath(`assets/logo/logo-${variant}-${size}-${themeMode}.png`)}
       />
     </Box>
   );

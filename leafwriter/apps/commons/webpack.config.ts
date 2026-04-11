@@ -9,6 +9,8 @@ import webpack from 'webpack';
 import WebpackBar from 'webpackbar';
 
 const isDev = process.env.NODE_ENV === 'development';
+const routerBase = process.env.ROUTER_BASE || '/';
+const normalizedRouterBase = routerBase.endsWith('/') ? routerBase : `${routerBase}/`;
 
 const relPathToPackages = path.resolve(__dirname, '..', '..', 'packages');
 
@@ -59,6 +61,9 @@ const plugins = [
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, 'src', 'index.html'),
     favicon: path.resolve(__dirname, 'src', 'assets', 'logo', 'favicon.svg'),
+    templateParameters: {
+      routerBase: normalizedRouterBase,
+    },
   }),
   new MiniCssExtractPlugin({ filename: 'css/[name].css' }),
   new MonacoWebpackPlugin({ filename: 'monaco-[name].[ext].js', languages: ['xml', 'json'] }),

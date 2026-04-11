@@ -1,4 +1,5 @@
 import type { Types } from '@cwrc/leafwriter';
+import { absoluteAppUrl, appPath } from '@src/utilities';
 
 const isLocalDev = window.location.origin === 'http://localhost:3000';
 
@@ -7,8 +8,8 @@ const dracorSchema: Types.Schema = {
   name: 'DraCor',
   mapping: 'tei',
   rng: [
-    `${window.location.origin}/assets/schemas/dracor.rng`,
-    '/assets/schemas/dracor.rng',
+    absoluteAppUrl('assets/schemas/dracor.rng'),
+    appPath('assets/schemas/dracor.rng'),
     './assets/schemas/dracor.rng',
   ],
   css: ['https://cwrc.ca/templates/css/tei.css'],
