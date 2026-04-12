@@ -393,7 +393,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { getRepoFileJson, getLastCommit, getRepoFileText } from '../services/githubRepo.js'
+import { getRepoFileJson, getRepoFileText } from '../services/githubRepo.js'
 import { useQuasar } from 'quasar'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useLocale } from 'src/i18n'
@@ -638,11 +638,9 @@ const hasFullTitleTooltip = (title) => {
 }
 
 /*
-  Loads documents from GitHub index.json
-  Then:
-  - normalizes data
-  - applies local overrides
-  - fetches last commit info
+  Loads documents from GitHub index.json.
+  Title, author, year, and last_modified are all read directly from index.json.
+  No additional per-file requests are made at page load.
 */
 async function fetchGithubData() {
   loading.value = true
@@ -678,19 +676,6 @@ async function fetchGithubData() {
     )
 
     rows.value = flat
-
-    // Fetch commit metadata (last-modified date) for each document.
-    // Title and author come from index.json directly — no need to download full XML here.
-    // XML is fetched on-demand only when the user opens a document (see openDocViewer).
-    for (const row of rows.value) {
-      if (!row._path) continue
-
-      const commitData = await getLastCommit({ owner, repo, path: row._path })
-      const dateIso = commitData?.commit?.author?.date ?? null
-      if (!row.lastModified) row.lastModified = dateIso ? dateIso.split('T')[0] : null
-    }
-
-    rows.value = [...rows.value]
   } catch (e) {
     console.error('Error fetching GitHub data:', e)
     rows.value = []
