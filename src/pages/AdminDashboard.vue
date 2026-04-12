@@ -680,10 +680,9 @@ const hasFullTitleTooltip = (title) => {
 }
 
 /*
-  Loads documents from GitHub index.json
-  Then:
-  - normalizes data
-  - applies local overrides
+  Loads documents from GitHub index.json.
+  Title, author, year, and last_modified are all read directly from index.json.
+  No additional per-file requests are made at page load.
 */
 async function fetchGithubData() {
   loading.value = true
@@ -711,7 +710,6 @@ async function fetchGithubData() {
     )
 
     rows.value = flat
-
   } catch (e) {
     console.error('Error fetching GitHub data:', e)
     rows.value = []
