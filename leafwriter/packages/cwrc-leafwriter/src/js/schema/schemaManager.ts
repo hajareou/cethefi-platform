@@ -111,6 +111,11 @@ class SchemaManager {
         const css = this.getCss();
         if (rng) this.setDocumentSchemaUrl(rng);
         if (css) this.setDocumentCssUrl(css);
+
+        // Reset the stale badge immediately, then recompute validation
+        // against the newly loaded schema for the current document.
+        await this.writer.overmindActions.validator.updateValidationError(0);
+        if (this.writer.isDocLoaded) this.writer.validate();
       }
     });
   }
@@ -586,7 +591,7 @@ class SchemaManager {
     }
 
     //load resource
-    const schemaXML = await this.loadSchemaFile(rng);
+    const schemaXML = await this.loadSchemaFile(rng, { includeDocumentSchemaUrl: false });
     if (!schemaXML) {
       log.warn(`schemaManager.getPossibleRootsForSchema: could not connect to ${schemaId}`);
       return [];
@@ -606,10 +611,13 @@ class SchemaManager {
    * @param {Array} urls Collection of url sources
    * @returns {Document} The XML
    */
-  private async loadSchemaFile(urls: string[]) {
+  private async loadSchemaFile(
+    urls: string[],
+    { includeDocumentSchemaUrl = true }: { includeDocumentSchemaUrl?: boolean } = {},
+  ) {
     const candidates = new Set<string>();
 
-    if (this.documentSchemaUrl) {
+    if (includeDocumentSchemaUrl && this.documentSchemaUrl) {
       const documentSchemaId = this.getSchemaIdFromUrl(this.documentSchemaUrl);
       const documentSchemaEntry = documentSchemaId ? this.getSchema(documentSchemaId) : undefined;
 
@@ -712,7 +720,7 @@ class SchemaManager {
     const url = schemaBase !== null ? schemaBase + schemaFile : `schema/${schemaFile}`;
 
     //load resource
-    const includesXML = await this.loadSchemaFile([url]);
+    const includesXML = await this.loadSchemaFile([url], { includeDocumentSchemaUrl: false });
     if (!includesXML) return null;
 
     include.children().each((index, el) => {
@@ -862,7 +870,9 @@ class SchemaManager {
     this.mapper.loadMappings(schemaMappingsId);
 
     //load resource
-    const schemaXML = await this.loadSchemaFile(schemaEntry.rng);
+    const schemaXML = await this.loadSchemaFile(schemaEntry.rng, {
+      includeDocumentSchemaUrl: false,
+    });
 
     if (!schemaXML) {
       this.schemaId = null;

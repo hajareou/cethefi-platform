@@ -47,6 +47,8 @@ export const initialize = async ({ state }: Context) => {
 
   if (!state.validator.hasWorkerValidator) return;
 
+  state.validator.hasSchema = false;
+
   const workerValidator = window.leafwriterValidator;
   state.validator.hasWorkerValidator = !!workerValidator;
 
