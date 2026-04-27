@@ -383,14 +383,12 @@ const normalizeGithubId = (value) => String(value || '').trim()
 
 const buildIdentityKey = (user) =>
   normalizeGithubId(user?.githubId) ||
-  normalizeIdentity(user?.email) ||
   normalizeIdentity(user?.githubUsername)
 
 const normalizeUserEntry = (user = {}) => {
   const normalized = {
     ...user,
     githubId: normalizeGithubId(user.githubId),
-    email: String(user.email || '').trim(),
     githubUsername: String(user.githubUsername || '').trim(),
     isAdmin: !!user.isAdmin,
     canEdit: !!user.canEdit,
@@ -461,7 +459,7 @@ const confirmDelete = (user) => {
   })
 }
 
-// Removes a user by email (email is the unique key)
+// Removes a user by GitHub identity.
 const deleteUser = (user) => {
   users.value = users.value.filter((u) => u.identityKey !== user.identityKey)
 
