@@ -183,15 +183,6 @@
           dense
         />
 
-        <!-- User email -->
-        <q-input
-          v-model="newUser.email"
-          :label="t('common.email')"
-          type="email"
-          outlined
-          dense
-        />
-
         <q-input
           v-model="newUser.githubUsername"
           :label="t('users.githubUsername')"
@@ -248,7 +239,6 @@
 
       <q-card-section class="q-gutter-md">
         <q-input v-model="editUser.name" :label="t('common.name')" outlined dense />
-        <q-input v-model="editUser.email" :label="t('common.email')" type="email" outlined dense />
         <q-input v-model="editUser.githubUsername" :label="t('users.githubUsername')" outlined dense />
         <q-checkbox
           v-model="editUser.isAdmin"
@@ -361,14 +351,6 @@ const columns = computed(() => [
     align: 'left',
     label: t('users.user'),
     field: 'name',
-    sortable: true,
-    sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
-  },
-  {
-    name: 'email',
-    align: 'left',
-    label: t('common.email'),
-    field: 'email',
     sortable: true,
     sort: (a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }),
   },
@@ -498,7 +480,6 @@ const showAddDialog = ref(false)
 
 const newUser = ref({
   name: '',
-  email: '',
   githubUsername: '',
   isAdmin: false,
   canEdit: false,
@@ -522,20 +503,17 @@ const handleAdminToggle = (target) => {
  */
 const addUser = () => {
   // Basic validation
-  if (!newUser.value.name || (!newUser.value.email && !newUser.value.githubUsername)) {
+  if (!newUser.value.name || !newUser.value.githubUsername) {
     $q.notify({
       color: 'negative',
       message: t('users.nameOrIdentityRequired'),
     })
     return
   }
-
-  const email = newUser.value.email.trim()
   const githubUsername = newUser.value.githubUsername.trim()
 
   const duplicate = users.value.some(
     (u) =>
-      (email && normalizeIdentity(u.email) === normalizeIdentity(email)) ||
       (githubUsername &&
         normalizeIdentity(u.githubUsername) === normalizeIdentity(githubUsername)),
   )
@@ -551,14 +529,12 @@ const addUser = () => {
   // Add new user to the table data
   users.value.push(normalizeUserEntry({
     ...newUser.value,
-    email,
     githubUsername,
   }))
 
   // Reset the form for next time
   newUser.value = {
     name: '',
-    email: '',
     githubUsername: '',
     isAdmin: false,
     canEdit: false,
@@ -583,11 +559,10 @@ const editUserOriginalKey = ref(null)
 
 // editable copy
 
-const editUserOriginal = ref({ name: '', email: '', githubUsername: '', isAdmin: false })
+const editUserOriginal = ref({ name: '', githubUsername: '', isAdmin: false })
 
 const editUser = ref({
   name: '',
-  email: '',
   githubUsername: '',
   isAdmin: false,
 })
@@ -597,14 +572,12 @@ const openEditUser = (row) => {
 
   editUserOriginal.value = {
     name: row.name,
-    email: row.email,
     githubUsername: row.githubUsername,
     isAdmin: !!row.isAdmin,
   }
 
   editUser.value = {
     name: row.name,
-    email: row.email,
     githubUsername: row.githubUsername,
     isAdmin: !!row.isAdmin,
   }
@@ -615,23 +588,20 @@ const openEditUser = (row) => {
 
 const saveEditedUser = () => {
   const name = editUser.value.name.trim()
-  const email = editUser.value.email.trim()
   const githubUsername = editUser.value.githubUsername.trim()
   const isAdmin = !!editUser.value.isAdmin
 
-  if (!name || (!email && !githubUsername)) {
+  if (!name || !githubUsername) {
     $q.notify({ color: 'negative', message: t('users.nameOrIdentityRequired') })
     return
   }
 
   const originalName = (editUserOriginal.value.name || '').trim()
-  const originalEmail = (editUserOriginal.value.email || '').trim()
   const originalGithubUsername = (editUserOriginal.value.githubUsername || '').trim()
   const originalIsAdmin = !!editUserOriginal.value.isAdmin
 
   if (
     name === originalName &&
-    email === originalEmail &&
     githubUsername === originalGithubUsername &&
     isAdmin === originalIsAdmin
   ) {
@@ -644,9 +614,8 @@ const saveEditedUser = () => {
     if (u.identityKey === editUserOriginalKey.value) return false
 
     return (
-      (email && normalizeIdentity(u.email) === normalizeIdentity(email)) ||
-      (githubUsername &&
-        normalizeIdentity(u.githubUsername) === normalizeIdentity(githubUsername))
+      githubUsername &&
+      normalizeIdentity(u.githubUsername) === normalizeIdentity(githubUsername)
     )
   })
 
@@ -667,7 +636,6 @@ const saveEditedUser = () => {
   users.value[idx] = normalizeUserEntry({
     ...users.value[idx],
     name,
-    email,
     githubUsername,
     isAdmin,
   })
