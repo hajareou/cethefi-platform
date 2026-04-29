@@ -19,12 +19,6 @@ server.use('/api', api);
 server.use(helmet.frameguard({ action: 'sameorigin' }));
 
 if (normalizedRouterBase) {
-  server.get(['/edit', '/view'], (req, res) => {
-    res.redirect(302, `${normalizedRouterBase}${req.originalUrl}`);
-  });
-}
-
-if (normalizedRouterBase) {
   server.use(normalizedRouterBase, express.static(publicPath));
 }
 server.use(express.static(publicPath));
