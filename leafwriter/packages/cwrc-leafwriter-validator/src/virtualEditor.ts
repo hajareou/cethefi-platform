@@ -36,8 +36,6 @@ class VirtualEditor {
     id,
     url,
   }: InitializeParameters): Promise<InitializeResponse> {
-    if (this.schemaId === id) return { success: true };
-
     //* get cached schema
     const cachedSchema = await db.cachedSchemas.get(id);
 

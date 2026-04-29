@@ -105,7 +105,9 @@ class SchemaManager {
 
     this.writer.event('schemaChanged').subscribe(async (schemaId: string) => {
       // this event is only fired by the settings dialog (by the user), so update the current document urls
-      const schemaLoaded = await this.loadSchema(schemaId);
+      const schemaLoaded = await this.loadSchema(schemaId, undefined, {
+        includeDocumentSchemaUrl: false,
+      });
       if (schemaLoaded) {
         const rng = this.getRng();
         const css = this.getCss();
@@ -586,7 +588,7 @@ class SchemaManager {
     }
 
     //load resource
-    const schemaXML = await this.loadSchemaFile(rng);
+    const schemaXML = await this.loadSchemaFile(rng, { includeDocumentSchemaUrl: false });
     if (!schemaXML) {
       log.warn(`schemaManager.getPossibleRootsForSchema: could not connect to ${schemaId}`);
       return [];
@@ -606,10 +608,13 @@ class SchemaManager {
    * @param {Array} urls Collection of url sources
    * @returns {Document} The XML
    */
-  private async loadSchemaFile(urls: string[]) {
+  private async loadSchemaFile(
+    urls: string[],
+    { includeDocumentSchemaUrl = true }: { includeDocumentSchemaUrl?: boolean } = {},
+  ) {
     const candidates = new Set<string>();
 
-    if (this.documentSchemaUrl) {
+    if (includeDocumentSchemaUrl && this.documentSchemaUrl) {
       const documentSchemaId = this.getSchemaIdFromUrl(this.documentSchemaUrl);
       const documentSchemaEntry = documentSchemaId ? this.getSchema(documentSchemaId) : undefined;
 
@@ -840,7 +845,11 @@ class SchemaManager {
    * @param {Boolean} loadCss Whether to load the associated CSS
    * @param {Function} [callback] Callback for when the load is complete
    */
-  async loadSchema(schemaId: string, css?: string) {
+  async loadSchema(
+    schemaId: string,
+    css?: string,
+    { includeDocumentSchemaUrl = true }: { includeDocumentSchemaUrl?: boolean } = {},
+  ) {
     const schemaEntry = this.schemas.find((schema) => schema.id === schemaId);
 
     if (!schemaEntry) {
@@ -862,7 +871,7 @@ class SchemaManager {
     this.mapper.loadMappings(schemaMappingsId);
 
     //load resource
-    const schemaXML = await this.loadSchemaFile(schemaEntry.rng);
+    const schemaXML = await this.loadSchemaFile(schemaEntry.rng, { includeDocumentSchemaUrl });
 
     if (!schemaXML) {
       this.schemaId = null;

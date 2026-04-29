@@ -5,6 +5,9 @@ import path from 'path';
 import { api } from './routes';
 
 const publicPath = path.join(__dirname, '..', 'public');
+const routerBase = process.env.ROUTER_BASE || '/';
+const normalizedRouterBase =
+  routerBase && routerBase !== '/' ? `/${routerBase.replace(/^\/+|\/+$/g, '')}` : '';
 
 export const server = express();
 
@@ -15,6 +18,9 @@ server.use('/api', api);
 
 server.use(helmet.frameguard({ action: 'sameorigin' }));
 
+if (normalizedRouterBase) {
+  server.use(normalizedRouterBase, express.static(publicPath));
+}
 server.use(express.static(publicPath));
 
 // catch all
