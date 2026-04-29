@@ -478,7 +478,7 @@ const owner = import.meta.env.VITE_GITHUB_OWNER
 const ownerType = import.meta.env.VITE_GITHUB_OWNER_TYPE
 const repo = import.meta.env.VITE_GITHUB_REPO
 const INDEX_JSON_PATH = 'index.json'
-const LEAFWRITER_URL = import.meta.env.VITE_LEAFWRITER_URL
+const LEAFWRITER_URL = (import.meta.env.VITE_LEAFWRITER_URL || '').replace(/\/+$/, '')
 // Centralized status values used across the app
 const STATUS = {
   DRAFT: 'Draft',
