@@ -5,6 +5,20 @@ const API_BASE =
   import.meta.env.VITE_AUTH_API_BASE_URL ||
   'http://localhost:8091';
 
+export async function fetchDocNotes() {
+  const token = localStorage.getItem('authToken')
+
+  const { data } = await axios.get(
+    `${API_BASE}/api/notes`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      withCredentials: true,
+    },
+  )
+
+  return data;
+}
+
 export async function fetchDocNote(docId) {
   const token = localStorage.getItem('authToken')
 

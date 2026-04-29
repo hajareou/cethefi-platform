@@ -214,14 +214,23 @@
           <template v-slot:body-cell-notes="props">
             <q-td :props="props" class="text-center">
               <q-btn
-                flat
                 dense
                 round
-                color="grey-7"
-                icon="sticky_note_2"
+                :flat="hasDocNote(props.row)"
+                :outline="!hasDocNote(props.row)"
+                :color="hasDocNote(props.row) ? 'amber-8' : 'grey-6'"
+                :icon="hasDocNote(props.row) ? 'sticky_note_2' : 'note_add'"
                 @click.stop="openNotes(props.row)"
               >
-                <q-tooltip>{{ t('common.notes') }}</q-tooltip>
+                <q-tooltip class="dashboard-note-tooltip">
+                  <template
+                    v-for="(line, index) in getNoteTooltipLines(props.row)"
+                    :key="`${props.row.id}-note-line-${index}`"
+                  >
+                    <span>{{ line }}</span>
+                    <br v-if="index < getNoteTooltipLines(props.row).length - 1">
+                  </template>
+                </q-tooltip>
               </q-btn>
             </q-td>
           </template>
@@ -439,7 +448,7 @@ import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { useLocale } from 'src/i18n'
 import { useAuthStore } from 'src/stores/auth'
 import CETEI from 'CETEIcean'
-import { fetchDocNote, saveDocNote } from '../services/notesApi'
+import { fetchDocNote, fetchDocNotes, saveDocNote } from '../services/notesApi'
 import { updateDocumentStatus } from '../services/documentsApi'
 
 const authStore = useAuthStore()
@@ -679,6 +688,34 @@ const hasFullTitleTooltip = (title) => {
   return normalized.length > 28
 }
 
+const normalizeNote = (note) => String(note ?? '').trim()
+
+const hasDocNote = (doc) => normalizeNote(doc?.note).length > 0
+
+const getNoteTooltip = (doc) => normalizeNote(doc?.note) || t('common.notes')
+
+const getNoteTooltipLines = (doc) => getNoteTooltip(doc).split(/\r?\n/)
+
+const applyNotesToRows = async () => {
+  try {
+    const data = await fetchDocNotes()
+    const notes = data?.notes && typeof data.notes === 'object' ? data.notes : {}
+
+    rows.value = rows.value.map((row) => {
+      const entry = notes[row.id] || {}
+
+      return {
+        ...row,
+        note: entry.note || '',
+        noteUpdatedAt: entry.updated_at || null,
+        noteUpdatedBy: entry.updated_by || null,
+      }
+    })
+  } catch (e) {
+    console.error('Failed to load notes:', e)
+  }
+}
+
 /*
   Loads documents from GitHub index.json.
   Title, author, year, and last_modified are all read directly from index.json.
@@ -702,6 +739,9 @@ async function fetchGithubData() {
       lastModified: doc.last_modified,
       status: normalizeStatus(doc?.status),
       _path: doc?.storage_path ?? null,
+      note: '',
+      noteUpdatedAt: null,
+      noteUpdatedBy: null,
     }))
 
     // Sort documents
@@ -710,6 +750,7 @@ async function fetchGithubData() {
     )
 
     rows.value = flat
+    await applyNotesToRows()
   } catch (e) {
     console.error('Error fetching GitHub data:', e)
     rows.value = []
@@ -934,6 +975,11 @@ const openNotes = async (row) => {
   try {
     const data = await fetchDocNote(row.id)
     notesText.value = data.note || ''
+    Object.assign(row, {
+      note: data.note || '',
+      noteUpdatedAt: data.updated_at || null,
+      noteUpdatedBy: data.updated_by || null,
+    })
   } catch (e) {
     console.error('Failed to load note:', e)
     $q.notify({
@@ -951,7 +997,12 @@ const saveNotes = async () => {
   notesSaving.value = true
 
   try {
-    await saveDocNote(notesDoc.value.id, notesText.value)
+    const data = await saveDocNote(notesDoc.value.id, notesText.value)
+    Object.assign(notesDoc.value, {
+      note: data.note || '',
+      noteUpdatedAt: data.updated_at || null,
+      noteUpdatedBy: data.updated_by || null,
+    })
 
     showNotesDialog.value = false
 
@@ -1019,5 +1070,15 @@ const persistStatusChange = async (doc, nextStatus, notifyOptions) => {
 .action-placeholder {
   color: #9e9e9e;
   font-weight: 500;
+}
+
+:deep(.dashboard-note-tooltip) {
+  max-width: 360px;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  text-align: left;
+  white-space: pre-wrap;
 }
 </style>
