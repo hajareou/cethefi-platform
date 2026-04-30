@@ -93,6 +93,7 @@
             <q-checkbox v-model="statusFilter.reviewed" :label="t('common.reviewed')" dense />
             <q-checkbox v-model="statusFilter.submitted" :label="t('common.submittedForReview')" dense />
             <q-checkbox v-model="statusFilter.draft" :label="t('common.draft')" dense />
+            <q-checkbox v-model="statusFilter.notes" :label="t('common.notes')" dense />
           </div>
         </div>
         <q-table
@@ -889,6 +890,7 @@ const statusFilter = ref({
   submitted: false,
   reviewed: false,
   published: false,
+  notes: false,
 })
 
 /*
@@ -902,11 +904,17 @@ const filteredRows = computed(() => {
   if (statusFilter.value.reviewed) selected.push(STATUS.REVIEWED)
   if (statusFilter.value.published) selected.push(STATUS.PUBLISHED)
 
-  // If nothing selected -> show ALL documents
-  if (selected.length === 0) return rows.value
+  let result = rows.value
 
-  // Otherwise show only rows whose status is selected
-  return rows.value.filter((r) => selected.includes(r.status))
+  if (selected.length > 0) {
+    result = result.filter((r) => selected.includes(r.status))
+  }
+
+  if (statusFilter.value.notes) {
+    result = result.filter((r) => hasDocNote(r))
+  }
+
+  return result
 })
 
 const onRowClick = (evt, row) => {
